@@ -1,0 +1,512 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Brand Palette from Logo */
+  --brand-black: #111827;      /* Clean near-black for primary text */
+  --brand-dark-grey: #4b5563;  /* Medium neutral grey for secondary text */
+  --brand-grey: #9ca3af;       /* Neutral grey for borders and disabled text */
+  --brand-light-grey: #f3f4f6; /* Very light neutral grey for backgrounds */
+  --brand-white: #ffffff;
+  
+  --brand-orange: #ff4f18;     /* Official Orange Accent from logo */
+  --brand-blue: #0b53a0;       /* Official Blue Accent from logo */
+  
+  /* System States */
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-error-bg: #fee2e2;
+  --color-success-bg: #ecfdf5;
+  
+  /* Layout & Styling Values */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Outfit', system-ui, sans-serif;
+  --border-radius: 8px;
+  --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --box-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  --box-shadow-focus-blue: 0 0 0 3px rgba(11, 83, 160, 0.15);
+  --box-shadow-focus-orange: 0 0 0 3px rgba(255, 79, 24, 0.15);
+}
+
+/* Reset and Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--brand-light-grey);
+  color: var(--brand-black);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Typography */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--brand-black);
+  line-height: 1.25;
+}
+
+p {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--brand-dark-grey);
+}
+
+a {
+  color: var(--brand-blue);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition-smooth);
+}
+
+a:hover {
+  text-decoration: underline;
+  color: var(--brand-orange);
+}
+
+/* Custom Focus States */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+/* Auth Layout styling */
+.auth-layout-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  width: 100%;
+  background-color: var(--brand-light-grey);
+}
+
+.auth-card {
+  background-color: var(--brand-white);
+  border: 1px solid var(--brand-grey);
+  border-color: rgba(156, 163, 175, 0.2);
+  border-radius: var(--border-radius);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: var(--box-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  transition: var(--transition-smooth);
+}
+
+/* Role Selection Grid */
+.role-selection-card {
+  max-width: 900px;
+  width: 100%;
+  padding: 3rem 2.5rem;
+  background-color: var(--brand-white);
+  border: 1px solid rgba(156, 163, 175, 0.2);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+.role-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.role-card {
+  background: var(--brand-white);
+  border: 1px solid rgba(156, 163, 175, 0.3);
+  border-radius: var(--border-radius);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  transition: var(--transition-smooth);
+  cursor: pointer;
+  position: relative;
+}
+
+.role-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--brand-blue);
+  box-shadow: 0 10px 20px -5px rgba(11, 83, 160, 0.1);
+}
+
+.role-card.selected {
+  border-color: var(--brand-blue);
+  background-color: rgba(11, 83, 160, 0.02);
+  box-shadow: 0 10px 20px -5px rgba(11, 83, 160, 0.15);
+}
+
+.role-card-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--brand-light-grey);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand-blue);
+  transition: var(--transition-smooth);
+}
+
+.role-card:hover .role-card-icon-wrapper {
+  background-color: rgba(11, 83, 160, 0.1);
+  color: var(--brand-blue);
+}
+
+/* Specific button styles */
+.role-card .role-continue-btn {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+/* Logos & Icons */
+.logo-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  width: 100%;
+}
+
+.full-logo-img {
+  max-height: 80px;
+  object-fit: contain;
+  max-width: 100%;
+}
+
+.compact-logo-img {
+  max-height: 48px;
+  object-fit: contain;
+}
+
+.logo-subtext {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--brand-dark-grey);
+  margin-top: 0.25rem;
+}
+
+/* Forms styling */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 100%;
+  text-align: left;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--brand-black);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.form-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  border: 1px solid rgba(156, 163, 175, 0.5);
+  border-radius: var(--border-radius);
+  background-color: var(--brand-white);
+  color: var(--brand-black);
+  transition: var(--transition-smooth);
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
+}
+
+.form-input:focus {
+  border-color: var(--brand-blue);
+  box-shadow: var(--box-shadow-focus-blue);
+}
+
+/* Orange variant for student */
+.student-theme .form-input:focus {
+  border-color: var(--brand-orange);
+  box-shadow: var(--box-shadow-focus-orange);
+}
+
+.form-input.has-error {
+  border-color: var(--color-error);
+}
+
+.form-input.has-error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* Password eye button */
+.password-toggle-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--brand-dark-grey);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: var(--transition-smooth);
+}
+
+.password-toggle-btn:hover {
+  color: var(--brand-black);
+  background-color: var(--brand-light-grey);
+}
+
+.form-input-with-icon {
+  padding-right: 2.75rem;
+}
+
+/* Actions Row (Remember me & Forgot Password) */
+.form-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  width: 100%;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--brand-dark-grey);
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+}
+
+.checkbox-input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--brand-blue);
+  cursor: pointer;
+}
+
+.student-theme .checkbox-input {
+  accent-color: var(--brand-orange);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background-color: var(--brand-blue);
+  color: var(--brand-white);
+}
+
+.btn-primary:hover {
+  background-color: #083d75;
+}
+
+.btn-primary:active {
+  background-color: #062a52;
+}
+
+.btn-primary:disabled {
+  background-color: var(--brand-grey);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: not-allowed;
+}
+
+/* Student Accent primary button */
+.student-theme .btn-primary {
+  background-color: var(--brand-orange);
+  color: var(--brand-white);
+}
+
+.student-theme .btn-primary:hover {
+  background-color: #e03f0d;
+}
+
+.student-theme .btn-primary:active {
+  background-color: #c43206;
+}
+
+.btn-secondary {
+  background-color: var(--brand-white);
+  border: 1px solid rgba(156, 163, 175, 0.4);
+  color: var(--brand-black);
+}
+
+.btn-secondary:hover {
+  background-color: var(--brand-light-grey);
+  border-color: rgba(156, 163, 175, 0.6);
+}
+
+.btn-secondary:active {
+  background-color: #e5e7eb;
+}
+
+/* Messages & Alerts */
+.form-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: left;
+  animation: slideIn 0.2s ease-out;
+}
+
+.form-message-error {
+  background-color: var(--color-error-bg);
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.form-message-success {
+  background-color: var(--color-success-bg);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.form-message-icon {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+/* Footer / Meta info */
+.auth-footer {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--brand-dark-grey);
+}
+
+.auth-footer-text {
+  margin-top: 1.5rem;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .role-selection-card {
+    padding: 2rem 1.5rem;
+  }
+  
+  .role-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .role-card {
+    padding: 1.5rem;
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    gap: 1rem;
+  }
+  
+  .role-card-text {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .role-card .role-continue-btn {
+    width: auto;
+    margin-top: 0;
+  }
+  
+  .auth-card {
+    padding: 2rem 1.5rem;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading Spinner */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--brand-white);
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

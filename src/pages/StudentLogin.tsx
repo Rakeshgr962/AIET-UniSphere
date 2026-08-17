@@ -60,15 +60,13 @@ export const StudentLogin: React.FC = () => {
     // Mock API authentication call
     setTimeout(() => {
       setIsLoading(false);
-      // Hardcoded validation success example for testing
       if (usn.toLowerCase() === 'demousn' && password === 'Password123') {
         setStatus({ type: 'success', message: "Successfully signed in! Redirecting..." });
-        // Simulating redirect
         setTimeout(() => {
-          alert("Signed in successfully as Student (Demo mode). Redirecting to student area...");
-        }, 1000);
+          navigate('/student/dashboard');
+        }, 800);
       } else {
-        setStatus({ type: 'error', message: "Invalid Student ID / USN or password. Please try again." });
+        setStatus({ type: 'error', message: "Invalid Student ID / USN or password. Use demousn / Password123 for testing." });
       }
     }, 1500);
   };

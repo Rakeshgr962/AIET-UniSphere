@@ -1,0 +1,333 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  GraduationCap, 
+  CalendarCheck, 
+  ClipboardList, 
+  FileCheck2, 
+  BookOpen
+} from 'lucide-react';
+import { getStudentProfile } from '../services/studentService';
+import { getCourses } from '../services/courseService';
+import { getAssignments } from '../services/assignmentService';
+import { getAssessments } from '../services/assessmentService';
+import { getAttendanceSummary } from '../services/attendanceService';
+import { AppShell } from '../components/AppShell';
+import { StatCard } from '../components/StatCard';
+import { ProgressBar } from '../components/ProgressBar';
+import { AIInsightCard } from '../components/AIInsightCard';
+import { LoadingState } from '../components/LoadingState';
+import { ErrorState } from '../components/ErrorState';
+
+export const StudentDashboard: React.FC = () => {
+  const navigate = useNavigate();
+
+  // Unified loading & error states
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Data states
+  const [profile, setProfile] = useState<any>(null);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [assessments, setAssessments] = useState<any[]>([]);
+  const [attendance, setAttendance] = useState<any>(null);
+
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [profData, coursesData, assignData, assessData, attData] = await Promise.all([
+        getStudentProfile(),
+        getCourses(),
+        getAssignments(),
+        getAssessments(),
+        getAttendanceSummary()
+      ]);
+      setProfile(profData);
+      setCourses(coursesData);
+      setAssignments(assignData);
+      setAssessments(assessData);
+      setAttendance(attData);
+    } catch (err) {
+      setError("Unable to load student dashboard information. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <AppShell>
+        <LoadingState message="Loading your dashboard details..." />
+      </AppShell>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <AppShell>
+        <ErrorState message={error || "Failed to retrieve student profile"} onRetry={fetchDashboardData} />
+      </AppShell>
+    );
+  }
+
+  // Derived dashboard metrics
+  const pendingAssignments = assignments.filter(a => a.status === 'Pending').length;
+  const upcomingAssessments = assessments.filter(a => a.status === 'Upcoming').length;
+
+  // Custom greeting based on time of day
+  const getGreeting = () => {
+    const hrs = new Date().getHours();
+    if (hrs < 12) return 'Good Morning';
+    if (hrs < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  return (
+    <AppShell>
+      {/* Dashboard Greeting Header */}
+      <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', textAlign: 'left' }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: 'var(--font-display)' }}>
+          {getGreeting()}, {profile.name} 👋
+        </h1>
+        <p style={{ fontSize: '0.9rem', color: 'var(--brand-dark-grey)', fontWeight: 500 }}>
+          {profile.department} · Semester {profile.semester} · Academic Year {profile.academicYear}
+        </p>
+      </div>
+
+      {/* Academic Overview stats */}
+      <div className="stat-cards-grid">
+        <StatCard 
+          title="Attendance" 
+          value={`${attendance?.overallPercentage}%`} 
+          icon={<CalendarCheck size={20} />} 
+        />
+        <StatCard 
+          title="CGPA" 
+          value={profile.cgpa.toFixed(2)} 
+          icon={<GraduationCap size={20} />} 
+        />
+        <StatCard 
+          title="Pending Assignments" 
+          value={pendingAssignments} 
+          icon={<ClipboardList size={20} />} 
+        />
+        <StatCard 
+          title="Upcoming Assessments" 
+          value={upcomingAssessments} 
+          icon={<FileCheck2 size={20} />} 
+        />
+        <StatCard 
+          title="Active Courses" 
+          value={courses.length} 
+          icon={<BookOpen size={20} />} 
+        />
+      </div>
+
+      {/* Main columns */}
+      <div className="dashboard-grid-two-col">
+        {/* Left Column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          {/* Today's Priorities */}
+          <div className="dashboard-panel">
+            <div className="panel-header-row">
+              <h3 className="panel-title">Today's Priorities</h3>
+              <span style={{ fontSize: '0.75rem', color: 'var(--brand-dark-grey)', fontWeight: 600 }}>Urgent Tasks</span>
+            </div>
+            <div className="priority-list">
+              <div className="priority-item high-priority">
+                <div className="priority-details">
+                  <span className="priority-title">Database Systems Assignment 04</span>
+                  <span className="priority-meta">Due Today · 6:00 PM · Database Management Systems</span>
+                </div>
+                <button 
+                  onClick={() => navigate('/student/assignments/assign-dbms-04')}
+                  className="btn btn-primary" 
+                  style={{ width: 'auto', padding: '0.4rem 0.85rem', fontSize: '0.8rem', backgroundColor: 'var(--brand-orange)' }}
+                >
+                  Submit
+                </button>
+              </div>
+
+              <div className="priority-item">
+                <div className="priority-details">
+                  <span className="priority-title">Database Systems — Unit Test 2</span>
+                  <span className="priority-meta">Tomorrow · 10:00 AM · 60 minutes · 20 Questions</span>
+                </div>
+                <button 
+                  onClick={() => navigate('/student/assessments/assess-dbms-ut2')}
+                  className="btn btn-secondary" 
+                  style={{ width: 'auto', padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
+                >
+                  Details
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Insights Card */}
+          <AIInsightCard 
+            insight="Your recent assessment performance in Database Systems has improved, indicating strong comprehension of relational schemas." 
+            suggestedFocus="Normalization (BCNF) and Transaction Concurrency Control" 
+          />
+
+          {/* Course Progress Breakdown */}
+          <div className="dashboard-panel">
+            <div className="panel-header-row">
+              <h3 className="panel-title">Course Progress Overview</h3>
+              <button 
+                onClick={() => navigate('/student/courses')} 
+                className="btn btn-secondary" 
+                style={{ width: 'auto', padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+              >
+                View All Courses
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+              {courses.slice(0, 3).map((course) => (
+                <div key={course.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{course.name}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--brand-dark-grey)', fontWeight: 600 }}>{course.code}</span>
+                  </div>
+                  <ProgressBar progress={course.progress} showPercentage={true} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right Column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          {/* Attendance Panel */}
+          <div className="dashboard-panel">
+            <div className="panel-header-row">
+              <h3 className="panel-title">Subject Attendance</h3>
+              <button 
+                onClick={() => navigate('/student/attendance')}
+                className="btn btn-secondary" 
+                style={{ width: 'auto', padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+              >
+                View Attendance
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              {attendance?.subjects.slice(0, 4).map((sub: any) => (
+                <div key={sub.code} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem' }}>
+                  <span style={{ color: 'var(--brand-black)', fontWeight: 500, textAlign: 'left', flexGrow: 1, paddingRight: '0.5rem' }}>
+                    {sub.subject.length > 25 ? `${sub.subject.substring(0, 25)}...` : sub.subject}
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                    <span style={{ fontWeight: 600, color: sub.percentage < 80 ? 'var(--color-error)' : 'var(--brand-black)' }}>
+                      {sub.percentage}%
+                    </span>
+                    <span 
+                      className={`badge ${sub.percentage < 80 ? 'badge-overdue' : 'badge-graded'}`}
+                      style={{ padding: '0.15rem 0.45rem', fontSize: '0.7rem' }}
+                    >
+                      {sub.percentage < 80 ? 'Monitor' : 'Good'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Pending Assignments */}
+          <div className="dashboard-panel">
+            <div className="panel-header-row">
+              <h3 className="panel-title">Pending Assignments</h3>
+              <button 
+                onClick={() => navigate('/student/assignments')}
+                className="btn btn-secondary" 
+                style={{ width: 'auto', padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+              >
+                View Assignments
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              {assignments.filter(a => a.status === 'Pending').slice(0, 2).map((assign) => (
+                <div 
+                  key={assign.id} 
+                  onClick={() => navigate(`/student/assignments/${assign.id}`)}
+                  style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '0.2rem', 
+                    textAlign: 'left', 
+                    cursor: 'pointer',
+                    padding: '0.5rem',
+                    borderRadius: '4px',
+                    transition: 'var(--transition-smooth)'
+                  }}
+                  className="priority-item-interactive"
+                >
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--brand-black)' }}>
+                    {assign.title.split(' — ')[1] || assign.title}
+                  </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--brand-dark-grey)' }}>
+                    <span>{assign.courseName}</span>
+                    <span style={{ color: 'var(--color-error)', fontWeight: 600 }}>
+                      {assign.id === 'assign-dbms-04' ? 'Due Today' : 'Due Tomorrow'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Upcoming Assessments */}
+          <div className="dashboard-panel">
+            <div className="panel-header-row">
+              <h3 className="panel-title">Upcoming Assessments</h3>
+              <button 
+                onClick={() => navigate('/student/assessments')}
+                className="btn btn-secondary" 
+                style={{ width: 'auto', padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+              >
+                View Assessments
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              {assessments.filter(a => a.status === 'Upcoming').slice(0, 2).map((assess) => (
+                <div 
+                  key={assess.id} 
+                  onClick={() => navigate(`/student/assessments/${assess.id}`)}
+                  style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '0.2rem', 
+                    textAlign: 'left', 
+                    cursor: 'pointer',
+                    padding: '0.5rem',
+                    borderRadius: '4px'
+                  }}
+                >
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--brand-black)' }}>
+                    {assess.title}
+                  </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--brand-dark-grey)' }}>
+                    <span>{assess.courseName}</span>
+                    <span style={{ fontWeight: 600, color: 'var(--brand-blue)' }}>
+                      {assess.time}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </AppShell>
+  );
+};
+export default StudentDashboard;

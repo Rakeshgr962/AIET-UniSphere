@@ -6,8 +6,7 @@ import { LoadingState } from '../components/LoadingState';
 import { EmptyState } from '../components/EmptyState';
 import { RequestCard } from '../components/RequestCard';
 import { RequestFormModal } from '../components/RequestFormModal';
-import type { ServiceRequestItem, ServiceTypeItem } from '../data/studentServices';
-import type { CreateServiceRequestPayload } from '../services/studentService';
+import type { ServiceRequestItem, ServiceTypeItem, CreateServiceRequestPayload } from '../data/studentServices';
 import { getServiceRequests, getAvailableServices, createServiceRequest } from '../services/studentService';
 
 export const ServiceRequestsPage: React.FC = () => {

@@ -5,8 +5,7 @@ import { AppShell } from '../components/AppShell';
 import { LoadingState } from '../components/LoadingState';
 import { ServiceCard } from '../components/ServiceCard';
 import { RequestFormModal } from '../components/RequestFormModal';
-import type { ServiceTypeItem } from '../data/studentServices';
-import type { CreateServiceRequestPayload } from '../services/studentService';
+import type { ServiceTypeItem, CreateServiceRequestPayload } from '../data/studentServices';
 import { getAvailableServices, createServiceRequest } from '../services/studentService';
 
 export const StudentServicesPage: React.FC = () => {

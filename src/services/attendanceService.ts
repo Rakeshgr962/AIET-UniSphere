@@ -6,7 +6,7 @@ export interface FacultyAttendanceRecord {
   studentName: string;
   usn: string;
   status: 'Present' | 'Absent' | 'Late';
-  currentAttendancePercent: number;
+  currentAttendancePercent: number | null;
 }
 
 export interface AttendanceSessionLog {
@@ -23,30 +23,7 @@ export interface AttendanceSessionLog {
 
 let sessionAttendance: AttendanceSummary = { ...mockAttendance };
 
-let sessionFacultyLogs: AttendanceSessionLog[] = [
-  {
-    id: "att-log-1",
-    date: new Date().toISOString().slice(0, 10),
-    courseCode: "CSE-601",
-    courseName: "Database Management Systems",
-    presentCount: 56,
-    absentCount: 4,
-    lateCount: 2,
-    totalStudents: 62,
-    markedBy: "Dr. Sneha Reddy"
-  },
-  {
-    id: "att-log-2",
-    date: "2026-08-16",
-    courseCode: "CSE-603",
-    courseName: "Computer Networks",
-    presentCount: 54,
-    absentCount: 6,
-    lateCount: 2,
-    totalStudents: 62,
-    markedBy: "Dr. Sneha Reddy"
-  }
-];
+let sessionFacultyLogs: AttendanceSessionLog[] = [];
 
 export const getAttendanceSummary = (): Promise<AttendanceSummary> => {
   return new Promise((resolve) => {

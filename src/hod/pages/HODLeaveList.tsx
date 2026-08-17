@@ -19,7 +19,7 @@ export const HODLeaveList: React.FC = () => {
     const loadLeaves = async () => {
       setLoading(true);
       try {
-        const data = await getDepartmentLeaveRequests('dept-ds');
+        const data = await getDepartmentLeaveRequests();
         setLeaves(data);
       } catch (err) {
         console.error("Error loading leave requests:", err);
@@ -221,7 +221,7 @@ export const HODLeaveList: React.FC = () => {
 
                     <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
                       <button 
-                        onClick={() => navigate(`/hod/leave/${l.id}`)}
+                        onClick={() => navigate(`/hod/leave/${l.dbId || l.id}`)}
                         className="btn btn-secondary"
                         style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}
                       >

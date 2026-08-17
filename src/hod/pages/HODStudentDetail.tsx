@@ -68,13 +68,13 @@ export const HODStudentDetail: React.FC = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
               <span className="badge badge-active font-mono">{student.usn}</span>
-              <span className="badge badge-graded font-mono">SEMESTER {student.semester}</span>
+              <span className="badge badge-graded font-mono">SEMESTER {student.semester || 'N/A'}</span>
             </div>
             <h1 className="font-display" style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--brand-black)', margin: 0 }}>
               {student.name}
             </h1>
             <p style={{ fontSize: '0.9rem', color: 'var(--brand-dark-grey)', marginTop: '0.2rem' }}>
-              {student.department} · AY {student.academicYear}
+              {student.department} · AY {student.academicYear || 'Not assigned'}
             </p>
           </div>
 
@@ -116,14 +116,14 @@ export const HODStudentDetail: React.FC = () => {
               <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--brand-dark-grey)', textTransform: 'uppercase' }}>PHONE CONTACT</span>
               <div style={{ color: 'var(--brand-black)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.15rem' }}>
                 <Phone size={14} />
-                <span>{student.phone}</span>
+                <span>{student.phone || 'Not provided'}</span>
               </div>
             </div>
 
             <div>
               <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--brand-dark-grey)', textTransform: 'uppercase' }}>SEMESTER & DEPT</span>
               <div style={{ fontWeight: 700, color: 'var(--brand-black)', marginTop: '0.15rem' }}>
-                Semester {student.semester} — {student.department}
+                {student.semester ? `Semester ${student.semester}` : 'Semester Not provided'} — {student.department}
               </div>
             </div>
           </div>
@@ -137,20 +137,22 @@ export const HODStudentDetail: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
               <div style={{ backgroundColor: 'var(--brand-light-grey)', padding: '1rem', borderRadius: 'var(--border-radius)', textAlign: 'center', border: '1px solid rgba(156, 163, 175, 0.2)' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--brand-dark-grey)' }}>CUMULATIVE CGPA</span>
-                <div className="font-mono" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--brand-black)', marginTop: '0.2rem' }}>{student.cgpa.toFixed(2)}</div>
+                <div className="font-mono" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--brand-black)', marginTop: '0.2rem' }}>
+                  {student.cgpa != null ? Number(student.cgpa).toFixed(2) : 'Not provided'}
+                </div>
               </div>
 
               <div style={{ backgroundColor: 'var(--brand-light-grey)', padding: '1rem', borderRadius: 'var(--border-radius)', textAlign: 'center', border: '1px solid rgba(156, 163, 175, 0.2)' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--brand-dark-grey)' }}>ATTENDANCE RATE</span>
-                <div className="font-mono" style={{ fontSize: '1.5rem', fontWeight: 800, color: student.attendancePercent < 75 ? 'var(--color-error)' : 'var(--brand-black)', marginTop: '0.2rem' }}>
-                  {student.attendancePercent}%
+                <div className="font-mono" style={{ fontSize: '1.5rem', fontWeight: 800, color: student.attendancePercent && student.attendancePercent < 75 ? 'var(--color-error)' : 'var(--brand-black)', marginTop: '0.2rem' }}>
+                  {student.attendancePercent != null ? `${student.attendancePercent}%` : 'Not provided'}
                 </div>
               </div>
 
               <div style={{ backgroundColor: 'var(--brand-light-grey)', padding: '1rem', borderRadius: 'var(--border-radius)', textAlign: 'center', border: '1px solid rgba(156, 163, 175, 0.2)' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--brand-dark-grey)' }}>ASSIGNMENTS COMPLETED</span>
                 <div className="font-mono" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--brand-black)', marginTop: '0.2rem' }}>
-                  {student.assignmentsCompleted} / {student.assignmentsTotal}
+                  {student.assignmentsCompleted != null ? `${student.assignmentsCompleted} / ${student.assignmentsTotal || 0}` : 'Not tracked'}
                 </div>
               </div>
             </div>
@@ -174,8 +176,8 @@ export const HODStudentDetail: React.FC = () => {
                       <td style={{ padding: '0.75rem' }} className="font-mono text-blue font-bold">{cp.courseCode}</td>
                       <td style={{ padding: '0.75rem', fontWeight: 600, color: 'var(--brand-black)' }}>{cp.courseName}</td>
                       <td style={{ padding: '0.75rem' }} className="font-mono">
-                        <span style={{ fontWeight: 700, color: cp.attendance < 75 ? 'var(--color-error)' : 'var(--brand-black)' }}>
-                          {cp.attendance}%
+                        <span style={{ fontWeight: 700, color: (cp.attendance ?? 100) < 75 ? 'var(--color-error)' : 'var(--brand-black)' }}>
+                          {cp.attendance != null ? `${cp.attendance}%` : 'N/A'}
                         </span>
                       </td>
                       <td style={{ padding: '0.75rem' }} className="font-mono">{cp.assignmentCompletion}%</td>

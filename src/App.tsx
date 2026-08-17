@@ -19,6 +19,7 @@ import { AttendanceDetail } from './pages/AttendanceDetail';
 
 // Extended Academic & Communication Pages
 import { LeaveRequestsPage } from './pages/LeaveRequestsPage';
+import { StudentProfilePage } from './pages/StudentProfilePage';
 import { TimetablePage } from './pages/TimetablePage';
 import { AcademicCalendarPage } from './pages/AcademicCalendarPage';
 import { ResultsPage } from './pages/ResultsPage';
@@ -52,6 +53,8 @@ import { FacultyStudentDetail } from './faculty/pages/FacultyStudentDetail';
 import { FacultyAttendancePage } from './faculty/pages/FacultyAttendancePage';
 import { FacultyAssignmentList } from './faculty/pages/FacultyAssignmentList';
 import { FacultyAssignmentDetail } from './faculty/pages/FacultyAssignmentDetail';
+import { FacultyAssessmentList } from './faculty/pages/FacultyAssessmentList';
+import { FacultyAssessmentDetail } from './faculty/pages/FacultyAssessmentDetail';
 
 // Phase 7 & 8 HOD Portal Pages & Role Guard
 import { RoleGuard } from './app/guards/RoleGuard';
@@ -99,51 +102,54 @@ const App: React.FC = () => {
         <Route path="/login/admin" element={<AdminLogin />} />
 
         {/* Existing Academic Routes */}
-        <Route path="/student/dashboard" element={<StudentDashboard />} />
-        <Route path="/student/courses" element={<CoursesList />} />
-        <Route path="/student/courses/:id" element={<CourseDetail />} />
-        <Route path="/student/assignments" element={<AssignmentsList />} />
-        <Route path="/student/assignments/:id" element={<AssignmentDetail />} />
-        <Route path="/student/assessments" element={<AssessmentsList />} />
-        <Route path="/student/assessments/:id" element={<AssessmentDetail />} />
-        <Route path="/student/assessments/:id/attempt" element={<AssessmentAttempt />} />
-        <Route path="/student/attendance" element={<AttendanceDetail />} />
+        <Route path="/student/dashboard" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><StudentDashboard /></RoleGuard>} />
+        <Route path="/student/profile" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><StudentProfilePage /></RoleGuard>} />
+        <Route path="/student/courses" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><CoursesList /></RoleGuard>} />
+        <Route path="/student/courses/:id" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><CourseDetail /></RoleGuard>} />
+        <Route path="/student/assignments" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><AssignmentsList /></RoleGuard>} />
+        <Route path="/student/assignments/:id" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><AssignmentDetail /></RoleGuard>} />
+        <Route path="/student/assessments" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><AssessmentsList /></RoleGuard>} />
+        <Route path="/student/assessments/:id" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><AssessmentDetail /></RoleGuard>} />
+        <Route path="/student/assessments/:id/attempt" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><AssessmentAttempt /></RoleGuard>} />
+        <Route path="/student/attendance" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><AttendanceDetail /></RoleGuard>} />
 
         {/* Extended Academic & Communication Routes */}
-        <Route path="/student/leave-requests" element={<LeaveRequestsPage />} />
-        <Route path="/student/timetable" element={<TimetablePage />} />
-        <Route path="/student/calendar" element={<AcademicCalendarPage />} />
-        <Route path="/student/results" element={<ResultsPage />} />
-        <Route path="/student/announcements" element={<AnnouncementsPage />} />
+        <Route path="/student/leave-requests" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><LeaveRequestsPage /></RoleGuard>} />
+        <Route path="/student/timetable" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><TimetablePage /></RoleGuard>} />
+        <Route path="/student/calendar" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><AcademicCalendarPage /></RoleGuard>} />
+        <Route path="/student/results" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><ResultsPage /></RoleGuard>} />
+        <Route path="/student/announcements" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><AnnouncementsPage /></RoleGuard>} />
 
         {/* Phase 4 Required Feature Routes */}
-        <Route path="/student/notifications" element={<NotificationsPage />} />
-        <Route path="/student/projects" element={<ProjectsList />} />
-        <Route path="/student/projects/my" element={<MyProjectsList />} />
-        <Route path="/student/projects/:id" element={<ProjectDetail />} />
-        <Route path="/student/projects/:id/workspace" element={<ProjectWorkspace />} />
-        <Route path="/student/github" element={<GitGithubPage />} />
+        <Route path="/student/notifications" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><NotificationsPage /></RoleGuard>} />
+        <Route path="/student/projects" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><ProjectsList /></RoleGuard>} />
+        <Route path="/student/projects/my" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><MyProjectsList /></RoleGuard>} />
+        <Route path="/student/projects/:id" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><ProjectDetail /></RoleGuard>} />
+        <Route path="/student/projects/:id/workspace" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><ProjectWorkspace /></RoleGuard>} />
+        <Route path="/student/github" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><GitGithubPage /></RoleGuard>} />
 
         {/* Phase 5 Required Feature Routes */}
-        <Route path="/student/ai" element={<AILearningAssistantPage />} />
-        <Route path="/student/analytics" element={<AnalyticsPerformancePage />} />
-        <Route path="/student/learning-gaps" element={<LearningGapsPage />} />
-        <Route path="/student/recommendations" element={<RecommendationsPage />} />
-        <Route path="/student/skills" element={<SkillPassportPage />} />
-        <Route path="/student/achievements" element={<AchievementsPage />} />
-        <Route path="/student/services" element={<StudentServicesPage />} />
-        <Route path="/student/services/requests" element={<ServiceRequestsPage />} />
-        <Route path="/student/services/requests/:id" element={<ServiceRequestDetailPage />} />
+        <Route path="/student/ai" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><AILearningAssistantPage /></RoleGuard>} />
+        <Route path="/student/analytics" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><AnalyticsPerformancePage /></RoleGuard>} />
+        <Route path="/student/learning-gaps" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><LearningGapsPage /></RoleGuard>} />
+        <Route path="/student/recommendations" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><RecommendationsPage /></RoleGuard>} />
+        <Route path="/student/skills" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><SkillPassportPage /></RoleGuard>} />
+        <Route path="/student/achievements" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><AchievementsPage /></RoleGuard>} />
+        <Route path="/student/services" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><StudentServicesPage /></RoleGuard>} />
+        <Route path="/student/services/requests" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><ServiceRequestsPage /></RoleGuard>} />
+        <Route path="/student/services/requests/:id" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><ServiceRequestDetailPage /></RoleGuard>} />
 
         {/* Phase 6 Faculty Portal Routes */}
-        <Route path="/faculty/dashboard" element={<FacultyDashboard />} />
-        <Route path="/faculty/courses" element={<FacultyCoursesList />} />
-        <Route path="/faculty/courses/:id" element={<FacultyCourseDetail />} />
-        <Route path="/faculty/students" element={<FacultyStudentList />} />
-        <Route path="/faculty/students/:id" element={<FacultyStudentDetail />} />
-        <Route path="/faculty/attendance" element={<FacultyAttendancePage />} />
-        <Route path="/faculty/assignments" element={<FacultyAssignmentList />} />
-        <Route path="/faculty/assignments/:id" element={<FacultyAssignmentDetail />} />
+        <Route path="/faculty/dashboard" element={<RoleGuard allowedRoles={['FACULTY', 'ADMIN']}><FacultyDashboard /></RoleGuard>} />
+        <Route path="/faculty/courses" element={<RoleGuard allowedRoles={['FACULTY', 'ADMIN']}><FacultyCoursesList /></RoleGuard>} />
+        <Route path="/faculty/courses/:id" element={<RoleGuard allowedRoles={['FACULTY', 'ADMIN']}><FacultyCourseDetail /></RoleGuard>} />
+        <Route path="/faculty/students" element={<RoleGuard allowedRoles={['FACULTY', 'ADMIN']}><FacultyStudentList /></RoleGuard>} />
+        <Route path="/faculty/students/:id" element={<RoleGuard allowedRoles={['FACULTY', 'ADMIN']}><FacultyStudentDetail /></RoleGuard>} />
+        <Route path="/faculty/attendance" element={<RoleGuard allowedRoles={['FACULTY', 'ADMIN']}><FacultyAttendancePage /></RoleGuard>} />
+        <Route path="/faculty/assignments" element={<RoleGuard allowedRoles={['FACULTY', 'ADMIN']}><FacultyAssignmentList /></RoleGuard>} />
+        <Route path="/faculty/assignments/:id" element={<RoleGuard allowedRoles={['FACULTY', 'ADMIN']}><FacultyAssignmentDetail /></RoleGuard>} />
+        <Route path="/faculty/assessments" element={<RoleGuard allowedRoles={['FACULTY', 'ADMIN']}><FacultyAssessmentList /></RoleGuard>} />
+        <Route path="/faculty/assessments/:id" element={<RoleGuard allowedRoles={['FACULTY', 'ADMIN']}><FacultyAssessmentDetail /></RoleGuard>} />
 
         {/* Phase 7 HOD Portal Routes */}
         <Route path="/hod/dashboard" element={<RoleGuard allowedRoles={['HOD', 'ADMIN']}><HODDashboard /></RoleGuard>} />

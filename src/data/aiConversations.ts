@@ -56,68 +56,7 @@ export const mockQuickActions: QuickActionItem[] = [
   }
 ];
 
-export const mockConversations: AIConversation[] = [
-  {
-    id: 'conv-1',
-    title: 'DBMS Normalization',
-    date: 'Yesterday',
-    courseContext: 'Database Management Systems',
-    messages: [
-      {
-        id: 'm-1',
-        sender: 'user',
-        text: 'Explain normalization in DBMS and why we use 3NF.',
-        timestamp: '10:14 AM'
-      },
-      {
-        id: 'm-2',
-        sender: 'ai',
-        text: 'Normalization is a database design technique used to reduce data redundancy and eliminate update anomalies (insertion, deletion, modification).\n\nKey Normal Forms:\n• 1NF: Atomic column values (no repeating groups).\n• 2NF: In 1NF and no partial dependencies (non-key attributes depend on the whole primary key).\n• 3NF: In 2NF and no transitive dependencies (non-key attributes do not depend on other non-key attributes).\n\nWhy 3NF matters: It balances minimal redundancy with high query performance for standard relational applications.',
-        timestamp: '10:14 AM'
-      }
-    ]
-  },
-  {
-    id: 'conv-2',
-    title: 'Operating Systems Revision',
-    date: '2 days ago',
-    courseContext: 'Operating Systems',
-    messages: [
-      {
-        id: 'm-3',
-        sender: 'user',
-        text: 'What is the difference between preemptive and non-preemptive CPU scheduling?',
-        timestamp: '03:45 PM'
-      },
-      {
-        id: 'm-4',
-        sender: 'ai',
-        text: 'In Preemptive Scheduling, the OS can interrupt a running process and assign the CPU to a higher-priority process (e.g., Round Robin, SRTF).\n\nIn Non-Preemptive Scheduling, once a process is allocated the CPU, it keeps running until it finishes or requests I/O (e.g., FCFS, SJF).',
-        timestamp: '03:45 PM'
-      }
-    ]
-  },
-  {
-    id: 'conv-3',
-    title: 'AI Exam Preparation',
-    date: '5 days ago',
-    courseContext: 'Artificial Intelligence',
-    messages: [
-      {
-        id: 'm-5',
-        sender: 'user',
-        text: 'Give me key topics to review for heuristic search algorithms.',
-        timestamp: '06:20 PM'
-      },
-      {
-        id: 'm-6',
-        sender: 'ai',
-        text: 'Here are the primary heuristic search algorithms to review for AIET assessments:\n1. Best-First Search (Greedy): Evaluation function f(n) = h(n).\n2. A* Search: Evaluation function f(n) = g(n) + h(n). Ensure admissibility (h(n) ≤ actual cost) for optimality.\n3. Alpha-Beta Pruning: Reduces search tree evaluation depth in two-player games.',
-        timestamp: '06:21 PM'
-      }
-    ]
-  }
-];
+export const mockConversations: AIConversation[] = [];
 
 export const mockAIAnswers: Record<string, string> = {
   default: `Here is an academic summary based on your query:\n\nKey Concepts:\n1. Understand core definitions and mathematical/theoretical principles.\n2. Review solved examples and past assessment questions.\n3. Practice hands-on implementations in lab exercises.\n\n[Frontend Mock Note: This response is simulated for frontend demonstration purposes.]`,

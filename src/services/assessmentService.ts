@@ -78,3 +78,55 @@ export const submitAssessmentAnswers = (
     }, 1000);
   });
 };
+
+export interface CreateAssessmentPayload {
+  title: string;
+  courseId: string;
+  courseName: string;
+  courseCode?: string;
+  semester?: number;
+  date: string;
+  dueDate?: string;
+  time: string;
+  duration: number; // in minutes
+  totalMarks?: number;
+  instructions: string;
+}
+
+export const getFacultyAssessments = getAssessments;
+
+export const createAssessment = (payload: CreateAssessmentPayload): Promise<Assessment> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const newId = `asm-${Date.now()}`;
+      const newAssessment: Assessment = {
+        id: newId,
+        title: payload.title,
+        courseId: payload.courseId,
+        courseCode: payload.courseCode || payload.courseId,
+        courseName: payload.courseName,
+        semester: payload.semester || 6,
+        date: payload.date,
+        dueDate: payload.dueDate || payload.date,
+        time: payload.time || '10:00 AM',
+        duration: payload.duration || 60,
+        durationMinutes: payload.duration || 60,
+        status: 'Upcoming',
+        questionsCount: 5,
+        totalMarks: payload.totalMarks || 50,
+        instructions: payload.instructions,
+        questions: [
+          {
+            id: 1,
+            text: `Sample question for ${payload.title}`,
+            options: ['Option A', 'Option B', 'Option C', 'Option D'],
+            correctOptionIndex: 0,
+            marks: 10
+          }
+        ]
+      };
+      sessionAssessments = [newAssessment, ...sessionAssessments];
+      resolve(newAssessment);
+    }, 250);
+  });
+};

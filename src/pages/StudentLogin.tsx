@@ -5,9 +5,11 @@ import { FormField } from '../components/FormField';
 import { PasswordField } from '../components/PasswordField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { FormMessage } from '../components/FormMessage';
+import { useAuth } from '../app/context/AuthContext';
 
 export const StudentLogin: React.FC = () => {
   const navigate = useNavigate();
+  const { signIn, resetPassword } = useAuth();
   
   // Form states
   const [usn, setUsn] = useState('');
@@ -27,10 +29,10 @@ export const StudentLogin: React.FC = () => {
     let isValid = true;
 
     if (!usn.trim()) {
-      tempErrors.usn = "Please enter your Student ID / USN.";
+      tempErrors.usn = "Please enter your Student ID / USN or Email.";
       isValid = false;
-    } else if (usn.trim().length < 5) {
-      tempErrors.usn = "Student ID / USN must be at least 5 characters.";
+    } else if (usn.trim().length < 4) {
+      tempErrors.usn = "Student ID / USN or Email must be at least 4 characters.";
       isValid = false;
     }
 
@@ -46,7 +48,7 @@ export const StudentLogin: React.FC = () => {
     return isValid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus({ type: null, message: null });
 
@@ -57,18 +59,41 @@ export const StudentLogin: React.FC = () => {
 
     setIsLoading(true);
 
-    // Mock API authentication call
-    setTimeout(() => {
+    try {
+      const { profile } = await signIn(usn, password);
+      setStatus({ type: 'success', message: "Successfully signed in! Redirecting..." });
+      
+      const targetRole = profile?.role || 'STUDENT';
+      setTimeout(() => {
+        if (targetRole === 'ADMIN') navigate('/admin/dashboard');
+        else if (targetRole === 'HOD') navigate('/hod/dashboard');
+        else if (targetRole === 'FACULTY') navigate('/faculty/dashboard');
+        else navigate('/student/dashboard');
+      }, 500);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Invalid Student ID/USN or password.';
+      setStatus({ type: 'error', message: errorMessage });
+    } finally {
       setIsLoading(false);
-      if (usn.toLowerCase() === 'demousn' && password === 'Password123') {
-        setStatus({ type: 'success', message: "Successfully signed in! Redirecting..." });
-        setTimeout(() => {
-          navigate('/student/dashboard');
-        }, 800);
-      } else {
-        setStatus({ type: 'error', message: "Invalid Student ID / USN or password. Use demousn / Password123 for testing." });
-      }
-    }, 1500);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!usn.trim()) {
+      setStatus({ type: 'error', message: "Please enter your email address in the field above to reset your password." });
+      return;
+    }
+    try {
+      setIsLoading(true);
+      await resetPassword(usn);
+      setStatus({ type: 'success', message: `Password reset instructions have been sent to ${usn}.` });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Password reset failed.';
+      setStatus({ type: 'error', message: msg });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -81,9 +106,9 @@ export const StudentLogin: React.FC = () => {
         <FormMessage type={status.type} message={status.message} />
 
         <FormField
-          label="Student ID / USN"
+          label="Student ID / USN or Email"
           id="student-usn"
-          placeholder="e.g. 1AB20CS001"
+          placeholder="e.g. 1AB20CS001 or student@aiet.edu"
           value={usn}
           onChange={(e) => setUsn(e.target.value)}
           error={errors.usn}
@@ -114,7 +139,7 @@ export const StudentLogin: React.FC = () => {
             />
             Remember me
           </label>
-          <a href="#forgot" onClick={(e) => { e.preventDefault(); alert("Password reset link will be sent to your registered email."); }} className="forgot-password-link">
+          <a href="#forgot" onClick={handleForgotPassword} className="forgot-password-link">
             Forgot password?
           </a>
         </div>

@@ -6,6 +6,7 @@ import {
   Users, 
   CalendarCheck, 
   ClipboardList, 
+  Award,
   Bell, 
   Menu, 
   Search, 
@@ -16,6 +17,8 @@ import {
 import { AuthLogo } from '../../components/AuthLogo';
 import { mockFacultyProfile } from '../data/facultyData';
 
+import { useAuth } from '../../app/context/AuthContext';
+
 interface FacultyAppShellProps {
   children: React.ReactNode;
 }
@@ -23,6 +26,7 @@ interface FacultyAppShellProps {
 export const FacultyAppShell: React.FC<FacultyAppShellProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { signOut, profile, user } = useAuth();
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -43,8 +47,9 @@ export const FacultyAppShell: React.FC<FacultyAppShellProps> = ({ children }) =>
     };
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (confirm("Are you sure you want to sign out from Faculty Portal?")) {
+      await signOut();
       navigate('/login/faculty');
     }
   };
@@ -57,7 +62,8 @@ export const FacultyAppShell: React.FC<FacultyAppShellProps> = ({ children }) =>
     { label: 'My Courses', path: '/faculty/courses', icon: <BookOpen size={18} /> },
     { label: 'Students', path: '/faculty/students', icon: <Users size={18} /> },
     { label: 'Attendance', path: '/faculty/attendance', icon: <CalendarCheck size={18} /> },
-    { label: 'Assignments', path: '/faculty/assignments', icon: <ClipboardList size={18} /> }
+    { label: 'Assignments', path: '/faculty/assignments', icon: <ClipboardList size={18} /> },
+    { label: 'Assessments', path: '/faculty/assessments', icon: <Award size={18} /> }
   ];
 
   // Helper to format page title from current pathname
@@ -71,6 +77,8 @@ export const FacultyAppShell: React.FC<FacultyAppShellProps> = ({ children }) =>
     if (path.includes('/faculty/attendance')) return 'Attendance Management';
     if (path.includes('/faculty/assignments/')) return 'Assignment Details';
     if (path.includes('/faculty/assignments')) return 'Assignment Management';
+    if (path.includes('/faculty/assessments/')) return 'Assessment Details';
+    if (path.includes('/faculty/assessments')) return 'Assessment Management';
     return 'Faculty Portal';
   };
 
@@ -196,10 +204,10 @@ export const FacultyAppShell: React.FC<FacultyAppShellProps> = ({ children }) =>
                 aria-label="Open profile menu"
               >
                 <div className="profile-avatar">
-                  {mockFacultyProfile.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  {((profile?.full_name || user?.email || 'Faculty').split(' ').map((n: string) => n[0]).join('')).substring(0, 2)}
                 </div>
                 <span style={{ fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  {mockFacultyProfile.name}
+                  {profile?.full_name || user?.email?.split('@')[0] || 'Faculty Member'}
                   <ChevronDown size={14} />
                 </span>
               </button>
@@ -207,12 +215,19 @@ export const FacultyAppShell: React.FC<FacultyAppShellProps> = ({ children }) =>
               {isProfileOpen && (
                 <div className="profile-dropdown">
                   <div className="dropdown-header">
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{mockFacultyProfile.name}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--brand-dark-grey)' }}>{mockFacultyProfile.department}</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{profile?.full_name || user?.email || 'Faculty Member'}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--brand-dark-grey)' }}>
+                      Faculty · {profile?.department?.name || 'Department not assigned'}
+                    </span>
+                    {profile?.usn_or_employee_id && (
+                      <span style={{ fontSize: '0.7rem', color: 'var(--brand-dark-grey)', marginTop: '0.1rem' }}>
+                        Emp ID: {profile.usn_or_employee_id}
+                      </span>
+                    )}
                   </div>
                   <button 
                     className="dropdown-item"
-                    onClick={() => { setIsProfileOpen(false); alert(`Faculty ID: ${mockFacultyProfile.id}\nTitle: ${mockFacultyProfile.title}\nDepartment: ${mockFacultyProfile.department}`); }}
+                    onClick={() => { setIsProfileOpen(false); alert(`Emp ID: ${profile?.usn_or_employee_id || 'N/A'}\nDepartment: ${profile?.department?.name || 'Department not assigned'}`); }}
                   >
                     <UserIcon size={16} />
                     Faculty Profile

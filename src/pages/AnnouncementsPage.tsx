@@ -54,8 +54,8 @@ export const AnnouncementsPage: React.FC = () => {
                 {anc.content}
               </p>
               <div style={{ marginTop: '1rem', display: 'flex', gap: '1.5rem', fontSize: '0.8rem', color: 'var(--brand-dark-grey)' }}>
-                <span>From: <strong>{anc.author || anc.category || 'Department Head'}</strong></span>
-                <span className="font-mono"><Calendar size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />{anc.date || anc.publishedAt || 'Recent'}</span>
+                <span>From: <strong>{(anc as any).author || anc.category || 'Department Head'}</strong></span>
+                <span className="font-mono"><Calendar size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />{(anc as any).date || anc.publishedAt || 'Recent'}</span>
               </div>
             </div>
           ))

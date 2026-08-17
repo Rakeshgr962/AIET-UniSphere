@@ -47,11 +47,13 @@ export const FacultyStudentDetail: React.FC = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
               <span className="badge badge-graded">{student.department}</span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--brand-dark-grey)', fontWeight: 500 }}>Semester {student.semester}</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--brand-dark-grey)', fontWeight: 500 }}>
+                {student.semester ? `Semester ${student.semester}` : 'Semester Not provided'}
+              </span>
             </div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--brand-black)' }}>{student.name}</h1>
             <p style={{ fontSize: '0.875rem', color: 'var(--brand-dark-grey)', fontWeight: 500, marginTop: '0.1rem' }}>
-              USN: <span style={{ fontFamily: 'monospace' }}>{student.usn}</span> · Academic Year {student.academicYear}
+              USN: <span style={{ fontFamily: 'monospace' }}>{student.usn}</span> · Academic Year {student.academicYear || 'Not assigned'}
             </p>
           </div>
 
@@ -68,17 +70,17 @@ export const FacultyStudentDetail: React.FC = () => {
       <div className="stat-cards-grid">
         <StatCard 
           title="Overall CGPA" 
-          value={student.cgpa.toString()} 
+          value={student.cgpa != null ? Number(student.cgpa).toFixed(2) : "Not provided"} 
           icon={<Award size={20} />}
         />
         <StatCard 
           title="Overall Attendance" 
-          value={`${student.attendancePercent}%`} 
+          value={student.attendancePercent != null ? `${student.attendancePercent}%` : "Not provided"} 
           icon={<CalendarCheck size={20} />}
         />
         <StatCard 
           title="Assignments Done" 
-          value={`${student.assignmentsCompleted} / ${student.assignmentsTotal}`} 
+          value={student.assignmentsCompleted != null ? `${student.assignmentsCompleted} / ${student.assignmentsTotal || 0}` : "Not tracked"} 
           icon={<ClipboardList size={20} />}
         />
       </div>
@@ -101,7 +103,7 @@ export const FacultyStudentDetail: React.FC = () => {
           </div>
           <div>
             <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--brand-dark-grey)', fontWeight: 600, textTransform: 'uppercase' }}>Phone</span>
-            <span style={{ fontWeight: 500, color: 'var(--brand-black)', fontFamily: 'monospace' }}>{student.phone}</span>
+            <span style={{ fontWeight: 500, color: 'var(--brand-black)', fontFamily: 'monospace' }}>{student.phone || 'Not provided'}</span>
           </div>
         </div>
       </div>
@@ -128,8 +130,8 @@ export const FacultyStudentDetail: React.FC = () => {
                   <td style={{ fontSize: '0.85rem', fontWeight: 600, fontFamily: 'monospace' }}>{cp.courseCode}</td>
                   <td style={{ fontWeight: 600, color: 'var(--brand-black)' }}>{cp.courseName}</td>
                   <td>
-                    <span style={{ fontWeight: 700, color: cp.attendance < 75 ? 'var(--color-error)' : 'var(--brand-blue)' }}>
-                      {cp.attendance}%
+                    <span style={{ fontWeight: 700, color: (cp.attendance ?? 100) < 75 ? 'var(--color-error)' : 'var(--brand-blue)' }}>
+                      {cp.attendance != null ? `${cp.attendance}%` : 'N/A'}
                     </span>
                   </td>
                   <td style={{ fontSize: '0.85rem', fontFamily: 'monospace' }}>{cp.assignmentCompletion}%</td>

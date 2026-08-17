@@ -171,12 +171,12 @@ export const FacultyCourseDetail: React.FC = () => {
                     </td>
                     <td style={{ fontSize: '0.85rem', fontFamily: 'monospace' }}>{std.usn}</td>
                     <td>
-                      <span style={{ fontWeight: 700, color: std.attendancePercent < 75 ? 'var(--color-error)' : 'var(--brand-blue)' }}>
-                        {std.attendancePercent}%
+                      <span style={{ fontWeight: 700, color: std.attendancePercent && std.attendancePercent < 75 ? 'var(--color-error)' : 'var(--brand-blue)' }}>
+                        {std.attendancePercent != null ? `${std.attendancePercent}%` : 'Not provided'}
                       </span>
                     </td>
                     <td style={{ fontSize: '0.85rem' }}>
-                      {std.assignmentsCompleted} / {std.assignmentsTotal} Done
+                      {std.assignmentsCompleted != null ? `${std.assignmentsCompleted} / ${std.assignmentsTotal || 0} Done` : 'Not tracked'}
                     </td>
                     <td>
                       <span className={`badge ${
@@ -261,7 +261,7 @@ export const FacultyCourseDetail: React.FC = () => {
             <div style={{ backgroundColor: 'var(--brand-light-grey)', padding: '1rem', borderRadius: 'var(--border-radius)', border: '1px solid rgba(156, 163, 175, 0.2)' }}>
               <h4 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.5rem' }}>Students Below 75% Threshold</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {students.filter(s => s.attendancePercent < 75).map(s => (
+                {students.filter(s => (s.attendancePercent ?? 100) < 75).map(s => (
                   <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                     <span>{s.name} ({s.usn})</span>
                     <span style={{ fontWeight: 700, color: 'var(--color-error)' }}>{s.attendancePercent}%</span>

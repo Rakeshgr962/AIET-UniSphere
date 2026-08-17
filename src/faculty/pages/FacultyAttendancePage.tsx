@@ -38,7 +38,16 @@ export const FacultyAttendancePage: React.FC = () => {
     });
   }, []);
 
-  const selectedCourse = mockFacultyCoursesList.find(c => c.id === selectedCourseId) || mockFacultyCoursesList[0];
+  const defaultCourse = {
+    id: 'cse-601',
+    code: 'CSE-601',
+    name: 'Database Management Systems',
+    semester: 6,
+    department: 'CSE — Data Science'
+  };
+
+  const coursesList = mockFacultyCoursesList.length > 0 ? mockFacultyCoursesList : [defaultCourse];
+  const selectedCourse = coursesList.find(c => c.id === selectedCourseId) || coursesList[0];
 
   const handleMarkAllPresent = () => {
     const updated: typeof attendanceMap = {};
@@ -60,7 +69,7 @@ export const FacultyAttendancePage: React.FC = () => {
       studentName: s.name,
       usn: s.usn,
       status: attendanceMap[s.id] || 'Present',
-      currentAttendancePercent: s.attendancePercent
+      currentAttendancePercent: s.attendancePercent ?? null
     }));
 
     try {
@@ -84,7 +93,7 @@ export const FacultyAttendancePage: React.FC = () => {
     }
   };
 
-  const lowAttendanceStudents = students.filter(s => s.attendancePercent < 75);
+  const lowAttendanceStudents = students.filter(s => (s.attendancePercent ?? 100) < 75);
 
   return (
     <FacultyAppShell>
@@ -111,7 +120,7 @@ export const FacultyAttendancePage: React.FC = () => {
               value={selectedCourseId}
               onChange={(e) => setSelectedCourseId(e.target.value)}
             >
-              {mockFacultyCoursesList.map(c => (
+              {coursesList.map(c => (
                 <option key={c.id} value={c.id}>
                   {c.code} — {c.name}
                 </option>
@@ -224,90 +233,99 @@ export const FacultyAttendancePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="table-responsive">
-            <table className="table font-sans">
-              <thead>
-                <tr>
-                  <th>Student Name</th>
-                  <th>USN</th>
-                  <th>Current Attendance %</th>
-                  <th>Status Selector</th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((std) => {
-                  const currentStatus = attendanceMap[std.id] || 'Present';
-                  return (
-                    <tr key={std.id}>
-                      <td style={{ fontWeight: 600, color: 'var(--brand-black)' }}>{std.name}</td>
-                      <td style={{ fontSize: '0.85rem', fontFamily: 'monospace' }}>{std.usn}</td>
-                      <td>
-                        <span style={{ fontWeight: 700, color: std.attendancePercent < 75 ? 'var(--color-error)' : 'var(--brand-blue)' }}>
-                          {std.attendancePercent}%
-                        </span>
-                      </td>
-                      <td>
-                        {/* Interactive Status Segmented Button Group */}
-                        <div style={{ display: 'inline-flex', backgroundColor: 'var(--brand-light-grey)', padding: '3px', borderRadius: 'var(--border-radius)', border: '1px solid rgba(156, 163, 175, 0.3)' }}>
-                          <button
-                            type="button"
-                            onClick={() => handleStatusToggle(std.id, 'Present')}
-                            style={{
-                              padding: '4px 12px',
-                              fontSize: '0.775rem',
-                              fontWeight: currentStatus === 'Present' ? 700 : 500,
-                              borderRadius: '4px',
-                              border: 'none',
-                              backgroundColor: currentStatus === 'Present' ? 'var(--brand-blue)' : 'transparent',
-                              color: currentStatus === 'Present' ? 'var(--brand-white)' : 'var(--brand-dark-grey)',
-                              cursor: 'pointer',
-                              transition: 'var(--transition-smooth)'
-                            }}
-                          >
-                            Present
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleStatusToggle(std.id, 'Absent')}
-                            style={{
-                              padding: '4px 12px',
-                              fontSize: '0.775rem',
-                              fontWeight: currentStatus === 'Absent' ? 700 : 500,
-                              borderRadius: '4px',
-                              border: 'none',
-                              backgroundColor: currentStatus === 'Absent' ? 'var(--brand-orange)' : 'transparent',
-                              color: currentStatus === 'Absent' ? 'var(--brand-white)' : 'var(--brand-dark-grey)',
-                              cursor: 'pointer',
-                              transition: 'var(--transition-smooth)'
-                            }}
-                          >
-                            Absent
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleStatusToggle(std.id, 'Late')}
-                            style={{
-                              padding: '4px 12px',
-                              fontSize: '0.775rem',
-                              fontWeight: currentStatus === 'Late' ? 700 : 500,
-                              borderRadius: '4px',
-                              border: 'none',
-                              backgroundColor: currentStatus === 'Late' ? '#f59e0b' : 'transparent',
-                              color: currentStatus === 'Late' ? 'var(--brand-white)' : 'var(--brand-dark-grey)',
-                              cursor: 'pointer',
-                              transition: 'var(--transition-smooth)'
-                            }}
-                          >
-                            Late
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          {students.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--brand-dark-grey)' }}>
+              <CalendarCheck size={44} style={{ margin: '0 auto 0.75rem', opacity: 0.4, color: 'var(--brand-black)' }} />
+              <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--brand-black)' }}>No Enrolled Students Registered</h4>
+              <p style={{ fontSize: '0.85rem', marginTop: '0.25rem', maxWidth: '420px', marginInline: 'auto' }}>
+                Students enrolled in {selectedCourse.code} ({selectedCourse.name}) will populate in this attendance grid upon database sync.
+              </p>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table font-sans">
+                <thead>
+                  <tr>
+                    <th>Student Name</th>
+                    <th>USN</th>
+                    <th>Current Attendance %</th>
+                    <th>Status Selector</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((std) => {
+                    const currentStatus = attendanceMap[std.id] || 'Present';
+                    return (
+                      <tr key={std.id}>
+                        <td style={{ fontWeight: 600, color: 'var(--brand-black)' }}>{std.name}</td>
+                        <td style={{ fontSize: '0.85rem', fontFamily: 'monospace' }}>{std.usn}</td>
+                        <td>
+                          <span style={{ fontWeight: 700, color: std.attendancePercent && std.attendancePercent < 75 ? 'var(--color-error)' : 'var(--brand-blue)' }}>
+                            {std.attendancePercent != null ? `${std.attendancePercent}%` : 'Not provided'}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'inline-flex', backgroundColor: 'var(--brand-light-grey)', padding: '3px', borderRadius: 'var(--border-radius)', border: '1px solid rgba(156, 163, 175, 0.3)' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleStatusToggle(std.id, 'Present')}
+                              style={{
+                                padding: '4px 12px',
+                                fontSize: '0.775rem',
+                                fontWeight: currentStatus === 'Present' ? 700 : 500,
+                                borderRadius: '4px',
+                                border: 'none',
+                                backgroundColor: currentStatus === 'Present' ? 'var(--brand-blue)' : 'transparent',
+                                color: currentStatus === 'Present' ? 'var(--brand-white)' : 'var(--brand-dark-grey)',
+                                cursor: 'pointer',
+                                transition: 'var(--transition-smooth)'
+                              }}
+                            >
+                              Present
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleStatusToggle(std.id, 'Absent')}
+                              style={{
+                                padding: '4px 12px',
+                                fontSize: '0.775rem',
+                                fontWeight: currentStatus === 'Absent' ? 700 : 500,
+                                borderRadius: '4px',
+                                border: 'none',
+                                backgroundColor: currentStatus === 'Absent' ? 'var(--brand-orange)' : 'transparent',
+                                color: currentStatus === 'Absent' ? 'var(--brand-white)' : 'var(--brand-dark-grey)',
+                                cursor: 'pointer',
+                                transition: 'var(--transition-smooth)'
+                              }}
+                            >
+                              Absent
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleStatusToggle(std.id, 'Late')}
+                              style={{
+                                padding: '4px 12px',
+                                fontSize: '0.775rem',
+                                fontWeight: currentStatus === 'Late' ? 700 : 500,
+                                borderRadius: '4px',
+                                border: 'none',
+                                backgroundColor: currentStatus === 'Late' ? '#f59e0b' : 'transparent',
+                                color: currentStatus === 'Late' ? 'var(--brand-white)' : 'var(--brand-dark-grey)',
+                                cursor: 'pointer',
+                                transition: 'var(--transition-smooth)'
+                              }}
+                            >
+                              Late
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

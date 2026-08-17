@@ -36,7 +36,7 @@ export const HODAssessmentList: React.FC = () => {
   const filteredAssessments = assessments.filter((a) => {
     const matchesSearch = 
       a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.courseCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (a.courseCode || a.courseId).toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.courseName.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesSem = semFilter === 'All' || a.semester === Number(semFilter);

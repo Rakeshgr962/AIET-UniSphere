@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, Send, Paperclip } from 'lucide-react';
-import type { ServiceTypeItem } from '../data/studentServices';
-import type { CreateServiceRequestPayload } from '../services/studentService';
+import type { ServiceTypeItem, CreateServiceRequestPayload } from '../data/studentServices';
 import { FormField } from './FormField';
 
 interface RequestFormModalProps {

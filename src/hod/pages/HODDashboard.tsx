@@ -22,14 +22,18 @@ import {
 } from '../../services/departmentService';
 import type { DepartmentOverview } from '../../services/departmentService';
 
+import { useAuth } from '../../app/context/AuthContext';
+
 export const HODDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { profile: authProfile, user, refreshProfile } = useAuth();
   const [overview, setOverview] = useState<DepartmentOverview | null>(null);
   const [activities, setActivities] = useState<any[]>([]);
   const [attendanceData, setAttendanceData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    refreshProfile();
     const loadData = async () => {
       setLoading(true);
       try {
@@ -61,6 +65,16 @@ export const HODDashboard: React.FC = () => {
     );
   }
 
+  const getGreeting = () => {
+    const hrs = new Date().getHours();
+    if (hrs < 12) return 'Good Morning';
+    if (hrs < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  const hodName = authProfile?.full_name || user?.email?.split('@')[0] || overview.hodName || 'Head of Department';
+  const deptDisplayName = authProfile?.department?.name || 'Department not assigned';
+
   return (
     <HODAppShell>
       {/* Page Header */}
@@ -71,10 +85,10 @@ export const HODDashboard: React.FC = () => {
             <span className="badge badge-graded font-mono">AY {overview.academicYear}</span>
           </div>
           <h1 className="font-display" style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--brand-black)', margin: 0 }}>
-            Good Morning, {overview.hodName} 👋
+            {getGreeting()}, {hodName} 👋
           </h1>
           <p style={{ fontSize: '0.925rem', color: 'var(--brand-dark-grey)', marginTop: '0.2rem' }}>
-            {overview.departmentName} — Academic Operations & Governance
+            {deptDisplayName} — Academic Operations & Governance
           </p>
         </div>
 

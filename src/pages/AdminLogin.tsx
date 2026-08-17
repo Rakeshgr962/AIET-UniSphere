@@ -5,9 +5,12 @@ import { FormField } from '../components/FormField';
 import { PasswordField } from '../components/PasswordField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { FormMessage } from '../components/FormMessage';
+import { useAuth } from '../app/context/AuthContext';
+import { authService } from '../services/authService';
 
 export const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
 
   // Form states
   const [adminId, setAdminId] = useState('');
@@ -45,7 +48,7 @@ export const AdminLogin: React.FC = () => {
     return isValid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus({ type: null, message: null });
 
@@ -56,20 +59,30 @@ export const AdminLogin: React.FC = () => {
 
     setIsLoading(true);
 
-    // Mock API authentication call
-    setTimeout(() => {
-      setIsLoading(false);
-      
-      // Hardcoded validation success example
-      if (adminId.toLowerCase() === 'demoadmin' && password === 'Password123') {
-        setStatus({ type: 'success', message: "Successfully signed in as Administrator! Redirecting..." });
-        setTimeout(() => {
-          alert("Signed in successfully as Administrator (Demo mode).");
-        }, 1000);
-      } else {
-        setStatus({ type: 'error', message: "Invalid Admin ID/Email or password. Please try again." });
+    try {
+      const { profile } = await signIn(adminId, password);
+
+      if (!profile || profile.role !== 'ADMIN') {
+        await authService.signOut();
+        throw new Error('Access denied: Only registered Administrators can sign in through this portal.');
       }
-    }, 1500);
+
+      if (profile.account_status !== 'ACTIVE') {
+        await authService.signOut();
+        throw new Error(`Account access denied. Account status is ${profile.account_status.toLowerCase()}.`);
+      }
+
+      setStatus({ type: 'success', message: "Successfully signed in as Administrator! Redirecting..." });
+
+      setTimeout(() => {
+        navigate('/admin/dashboard');
+      }, 500);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Invalid Admin ID/Email or password.';
+      setStatus({ type: 'error', message: errorMessage });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

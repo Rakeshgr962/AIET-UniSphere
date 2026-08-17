@@ -5,8 +5,11 @@ import { HODAppShell } from '../components/HODAppShell';
 import { getAllFaculty } from '../../services/facultyService';
 import type { FacultyMember } from '../../data/faculty';
 
+import { useAuth } from '../../app/context/AuthContext';
+
 export const HODFacultyList: React.FC = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [facultyList, setFacultyList] = useState<FacultyMember[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [designationFilter, setDesignationFilter] = useState('All');
@@ -27,6 +30,8 @@ export const HODFacultyList: React.FC = () => {
     };
     loadFaculty();
   }, []);
+
+  const deptName = profile?.department?.name || 'Department';
 
   const filteredFaculty = facultyList.filter((fac) => {
     const matchesSearch = 
@@ -50,7 +55,7 @@ export const HODFacultyList: React.FC = () => {
             Faculty Roster
           </h1>
           <p style={{ fontSize: '0.9rem', color: 'var(--brand-dark-grey)', marginTop: '0.2rem' }}>
-            Data Science Department Academic Staff & Course Allocations
+            {deptName} Academic Staff &amp; Course Allocations
           </p>
         </div>
 

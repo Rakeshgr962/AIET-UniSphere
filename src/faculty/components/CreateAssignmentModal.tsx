@@ -10,12 +10,15 @@ interface CreateAssignmentModalProps {
   defaultCourseId?: string;
 }
 
+import { useAuth } from '../../app/context/AuthContext';
+
 export const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
   defaultCourseId = 'cse-601'
 }) => {
+  const { profile } = useAuth();
   const [courseId, setCourseId] = useState(defaultCourseId);
   const [title, setTitle] = useState('');
   const [instructions, setInstructions] = useState('');
@@ -94,6 +97,18 @@ export const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Department (Derived from Profile)</label>
+              <input 
+                type="text" 
+                className="form-input font-sans"
+                value={profile?.department?.name ? `${profile.department.code ? profile.department.code + ' — ' : ''}${profile.department.name}` : 'Department not assigned'}
+                disabled
+                readOnly
+                style={{ backgroundColor: 'var(--brand-light-grey)', color: 'var(--brand-black)', fontWeight: 600 }}
+              />
             </div>
 
             <div className="form-group">

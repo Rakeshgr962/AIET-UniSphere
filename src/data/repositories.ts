@@ -45,12 +45,12 @@ export const mockRepository: RepositoryInfo = {
   owner: 'student-user',
   visibility: 'Public',
   currentBranch: 'main',
-  lastCommit: 'Updated 2 hours ago',
+  lastCommit: 'Initialized repository',
   status: 'Connected',
   githubConnected: true,
   githubUsername: 'student-user',
-  starsCount: 14,
-  forksCount: 3,
+  starsCount: 0,
+  forksCount: 0,
   cloneUrl: 'https://github.com/student-user/ai-campus-analytics.git'
 };
 
@@ -58,95 +58,19 @@ export const mockBranches: GitBranchItem[] = [
   {
     id: 'br-1',
     name: 'main',
-    lastCommitMessage: 'feat: improve dashboard and chart responsiveness',
-    updatedTime: '2 hours ago',
-    author: 'Rakesh',
+    lastCommitMessage: 'initial commit',
+    updatedTime: 'Just now',
+    author: 'Student',
     isDefault: true
-  },
-  {
-    id: 'br-2',
-    name: 'development',
-    lastCommitMessage: 'refactor: update mock data service layer',
-    updatedTime: '5 hours ago',
-    author: 'Jane Doe'
-  },
-  {
-    id: 'br-3',
-    name: 'feature/authentication',
-    lastCommitMessage: 'feat: implement JWT token refresh flow',
-    updatedTime: '1 day ago',
-    author: 'Jane Doe'
-  },
-  {
-    id: 'br-4',
-    name: 'feature/dashboard',
-    lastCommitMessage: 'style: enhance stat card grid contrast',
-    updatedTime: '2 days ago',
-    author: 'Priya Sharma'
   }
 ];
 
-export const mockCommits: GitCommitItem[] = [
-  {
-    id: 'cmt-1',
-    hash: 'a82f91c94b321e847192834190aaef1234567890',
-    shortHash: 'a82f91c',
-    message: 'feat: improve dashboard metrics and chart rendering',
-    author: 'Rakesh',
-    date: '2 hours ago',
-    branch: 'main'
-  },
-  {
-    id: 'cmt-2',
-    hash: 'f4b109e23a4567890123456789abcdef01234567',
-    shortHash: 'f4b109e',
-    message: 'fix: resolve navbar dropdown z-index positioning',
-    author: 'Jane Doe',
-    date: '5 hours ago',
-    branch: 'development'
-  },
-  {
-    id: 'cmt-3',
-    hash: 'c3d2e1a9876543210987654321fedcba98765432',
-    shortHash: 'c3d2e1a',
-    message: 'feat: add real-time websocket listener for energy sensors',
-    author: 'Rakesh',
-    date: 'Yesterday',
-    branch: 'main'
-  },
-  {
-    id: 'cmt-4',
-    hash: 'e8f7d6c543210987654321098765432109876543',
-    shortHash: 'e8f7d6c',
-    message: 'docs: update setup guide in README.md',
-    author: 'Priya Sharma',
-    date: '2 days ago',
-    branch: 'main'
-  },
-  {
-    id: 'cmt-5',
-    hash: 'b9a8c7d6e5f43210987654321098765432109876',
-    shortHash: 'b9a8c7d',
-    message: 'initial commit: bootstrap Vite React project structure',
-    author: 'Jane Doe',
-    date: '1 week ago',
-    branch: 'main'
-  }
-];
+export const mockCommits: GitCommitItem[] = [];
 
 export const mockGitChanges: GitFileChange = {
-  modified: [
-    'src/pages/Dashboard.tsx',
-    'src/components/AppShell.tsx',
-    'src/index.css'
-  ],
-  added: [
-    'src/components/ProjectCard.tsx',
-    'src/data/projects.ts'
-  ],
-  deleted: [
-    'src/legacy/OldNavigation.tsx'
-  ]
+  modified: [],
+  added: [],
+  deleted: []
 };
 
 export const mockWorkspaceFiles = [

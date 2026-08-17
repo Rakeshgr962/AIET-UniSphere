@@ -5,10 +5,12 @@ import { FormField } from '../components/FormField';
 import { PasswordField } from '../components/PasswordField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { FormMessage } from '../components/FormMessage';
-import { setSessionRole } from '../app/guards/RoleGuard';
+import { useAuth } from '../app/context/AuthContext';
+import { authService } from '../services/authService';
 
 export const FacultyLogin: React.FC = () => {
   const navigate = useNavigate();
+  const { signIn, resetPassword } = useAuth();
 
   // Role sub-selection state (Faculty vs HOD)
   const [subRole, setSubRole] = useState<'faculty' | 'hod'>('faculty');
@@ -50,7 +52,7 @@ export const FacultyLogin: React.FC = () => {
     return isValid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus({ type: null, message: null });
 
@@ -61,31 +63,49 @@ export const FacultyLogin: React.FC = () => {
 
     setIsLoading(true);
 
-    // Mock API authentication call
-    setTimeout(() => {
-      setIsLoading(false);
-      
-      // Hardcoded validation success example or any input for easy demo
-      if ((identifier.toLowerCase() === 'demofaculty' && password === 'Password123') || identifier.trim().length >= 3) {
-        setSessionRole(subRole === 'hod' ? 'HOD' : 'FACULTY');
-        setStatus({ 
-          type: 'success', 
-          message: `Successfully signed in as ${subRole === 'hod' ? 'Head of Department (HOD)' : 'Faculty'}! Redirecting to Dashboard...` 
-        });
-        setTimeout(() => {
-          if (subRole === 'hod') {
-            navigate('/hod/dashboard');
-          } else {
-            navigate('/faculty/dashboard');
-          }
-        }, 800);
-      } else {
-        setStatus({ 
-          type: 'error', 
-          message: "Invalid Employee ID/Email or password. Please try again." 
-        });
+    try {
+      const { profile } = await signIn(identifier, password);
+
+      if (!profile) {
+        await authService.signOut();
+        throw new Error('Access denied: Profile not found.');
       }
-    }, 1000);
+
+      if (subRole === 'hod' && profile.role !== 'HOD' && profile.role !== 'ADMIN') {
+        await authService.signOut();
+        throw new Error('Access denied: Selected HOD portal requires a registered HOD account.');
+      }
+
+      if (subRole === 'faculty' && profile.role !== 'FACULTY' && profile.role !== 'HOD' && profile.role !== 'ADMIN') {
+        await authService.signOut();
+        throw new Error('Access denied: Only registered Faculty or HOD accounts can sign in through this portal.');
+      }
+
+      const activeRole = profile.role;
+
+      setStatus({ 
+        type: 'success', 
+        message: `Successfully signed in as ${activeRole === 'HOD' ? 'Head of Department (HOD)' : activeRole === 'ADMIN' ? 'Administrator' : 'Faculty'}! Redirecting to Dashboard...` 
+      });
+
+      setTimeout(() => {
+        if (activeRole === 'HOD') {
+          navigate('/hod/dashboard');
+        } else if (activeRole === 'ADMIN') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/faculty/dashboard');
+        }
+      }, 500);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Invalid Employee ID/Email or password.';
+      setStatus({ 
+        type: 'error', 
+        message: errorMessage
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

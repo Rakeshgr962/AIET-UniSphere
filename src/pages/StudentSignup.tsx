@@ -5,9 +5,11 @@ import { FormField } from '../components/FormField';
 import { PasswordField } from '../components/PasswordField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { FormMessage } from '../components/FormMessage';
+import { useAuth } from '../app/context/AuthContext';
 
 export const StudentSignup: React.FC = () => {
   const navigate = useNavigate();
+  const { signUp } = useAuth();
 
   // Form states
   const [fullName, setFullName] = useState('');
@@ -79,7 +81,7 @@ export const StudentSignup: React.FC = () => {
     return isValid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus({ type: null, message: null });
 
@@ -90,18 +92,22 @@ export const StudentSignup: React.FC = () => {
 
     setIsLoading(true);
 
-    // Mock API signup call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await signUp({ fullName, usn, email, password });
       setStatus({ 
         type: 'success', 
-        message: "Account created successfully! Redirecting to student login..." 
+        message: "Account created successfully! Please check your email to verify your account or sign in." 
       });
       
       setTimeout(() => {
         navigate('/login/student');
-      }, 2000);
-    }, 1500);
+      }, 1500);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Signup failed. Please try again.';
+      setStatus({ type: 'error', message: errorMessage });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

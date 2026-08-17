@@ -19,13 +19,17 @@ import { getFacultyDashboardData } from '../services/facultyService';
 import type { FacultyDashboardData } from '../services/facultyService';
 import { CreateAssignmentModal } from '../components/CreateAssignmentModal';
 
+import { useAuth } from '../../app/context/AuthContext';
+
 export const FacultyDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { profile: authProfile, user, refreshProfile } = useAuth();
   const [data, setData] = useState<FacultyDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateAssignmentOpen, setIsCreateAssignmentOpen] = useState(false);
 
   useEffect(() => {
+    refreshProfile();
     getFacultyDashboardData().then((res) => {
       setData(res);
       setIsLoading(false);
@@ -53,16 +57,19 @@ export const FacultyDashboard: React.FC = () => {
     return 'Good Evening';
   };
 
+  const facultyName = authProfile?.full_name || user?.email?.split('@')[0] || profile?.name || 'Faculty Member';
+  const deptDisplayName = authProfile?.department?.name || 'Department not assigned';
+
   return (
     <FacultyAppShell>
       {/* Dashboard Greeting Header */}
       <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', textAlign: 'left' }}>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--brand-black)' }}>
-            {getGreeting()}, {profile.name} 👋
+            {getGreeting()}, {facultyName} 👋
           </h1>
           <p style={{ fontSize: '0.9rem', color: 'var(--brand-dark-grey)', fontWeight: 500 }}>
-            {profile.department} · {profile.title} · {profile.office} · AY {profile.academicYear}
+            {deptDisplayName} · Faculty
           </p>
         </div>
 

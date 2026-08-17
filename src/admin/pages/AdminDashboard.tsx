@@ -34,14 +34,14 @@ export const AdminDashboard: React.FC = () => {
     loadDashboardData();
   }, []);
 
-  const totalCount = 652; // Institution total representation
-  const studentCount = 620;
-  const facultyCount = 24;
-  const hodCount = 6;
-  const adminCount = 2;
+  const totalCount = users.length;
+  const studentCount = users.filter(u => u.role === 'STUDENT').length;
+  const facultyCount = users.filter(u => u.role === 'FACULTY').length;
+  const hodCount = users.filter(u => u.role === 'HOD').length;
+  const adminCount = users.filter(u => u.role === 'ADMIN').length;
 
-  const activeCount = users.filter(u => u.status === 'Active').length + 628;
-  const inactiveCount = users.filter(u => u.status === 'Inactive').length + 6;
+  const activeCount = users.filter(u => u.status === 'Active').length;
+  const inactiveCount = users.filter(u => u.status === 'Inactive').length;
   const lockedCount = users.filter(u => u.status === 'Locked').length;
   const pendingCount = users.filter(u => u.status === 'Pending').length;
 

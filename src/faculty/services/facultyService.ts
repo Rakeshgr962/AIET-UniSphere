@@ -43,11 +43,11 @@ export const getFacultyDashboardData = async (): Promise<FacultyDashboardData> =
       resolve({
         profile: mockFacultyProfile,
         stats: {
-          myCoursesCount: 5,
-          studentsCount: 186,
+          myCoursesCount: 0,
+          studentsCount: 0,
           todaysClassesCount: mockTodaysClasses.length,
-          pendingEvaluationsCount: 14,
-          activeAssignmentsCount: 6,
+          pendingEvaluationsCount: 0,
+          activeAssignmentsCount: 0,
           attendanceAlertsCount: mockStudentAlerts.length
         },
         todaysClasses: [...mockTodaysClasses],

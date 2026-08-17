@@ -1,57 +1,111 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-
-/**
- * Role Definitions for AIET-UniSphere Role-Aware Architecture.
- */
-export type UserRole = 'STUDENT' | 'FACULTY' | 'HOD' | 'ADMIN';
+import { useAuth } from '../context/AuthContext';
+import type { UserRole } from '../../types/database.types';
 
 interface RoleGuardProps {
   children: React.ReactNode;
   allowedRoles: UserRole[];
 }
 
-/**
- * Centralized Role Guard Component for Frontend Route Protection.
- * 
- * IMPORTANT ARCHITECTURE & SECURITY NOTICE:
- * ------------------------------------------------------------------
- * Frontend route protection prevents invalid UI navigation and delivers a role-tailored UX.
- * IT IS NOT A REAL SECURITY BOUNDARY. In client-side SPA architectures, frontend code and route
- * definitions delivered to the browser can be inspected by users.
- * 
- * Production security MUST be independently verified and enforced by the backend API:
- * 1. Authenticated Session/JWT validation
- * 2. Backend User Role & Department Scope validation
- * 3. Row-level Data Ownership and Access Control checks
- * ------------------------------------------------------------------
- */
 export const RoleGuard: React.FC<RoleGuardProps> = ({ children, allowedRoles }) => {
+  const { session, role, isLoading } = useAuth();
   const location = useLocation();
 
-  // Retrieve current active user role from localStorage or default to current route context
-  const storedRole = (localStorage.getItem('unisphere_user_role') as UserRole) || 
-    (location.pathname.startsWith('/admin') ? 'ADMIN' : 
-     location.pathname.startsWith('/hod') ? 'HOD' : 
-     location.pathname.startsWith('/faculty') ? 'FACULTY' : 'STUDENT');
+  // 1. App loading state while checking session/profile
+  if (isLoading) {
+    return (
+      <div 
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          minHeight: '100vh',
+          backgroundColor: 'var(--brand-page-bg, #f8fafc)',
+          color: 'var(--brand-dark-grey, #334155)',
+          fontFamily: 'system-ui, sans-serif'
+        }}
+      >
+        <div 
+          style={{
+            width: '36px',
+            height: '36px',
+            border: '3px solid rgba(11, 83, 160, 0.15)',
+            borderTopColor: 'var(--brand-blue, #0b53a0)',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+            marginBottom: '1rem'
+          }}
+        />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <p style={{ fontSize: '0.875rem', fontWeight: 500, margin: 0 }}>Verifying session...</p>
+      </div>
+    );
+  }
 
-  const isAuthorized = allowedRoles.includes(storedRole);
+  // 2. Unauthenticated check
+  if (!session) {
+    // Redirect unauthenticated user to entry login
+    const loginTarget = location.pathname.startsWith('/admin') 
+      ? '/login/admin' 
+      : location.pathname.startsWith('/faculty') || location.pathname.startsWith('/hod')
+      ? '/login/faculty'
+      : '/login/student';
+      
+    return <Navigate to={loginTarget} state={{ from: location }} replace />;
+  }
+
+  // 3. Role authorization check (STRICTLY database profile role linked to authenticated user UUID)
+  const { profile, user } = useAuth();
+  const activeRole: UserRole | null = profile?.role || role || (user?.user_metadata?.role as UserRole) || null;
+
+  // If session is present but activeRole is still loading, wait for hydration instead of redirecting to /
+  if (!activeRole) {
+    return (
+      <div 
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          minHeight: '100vh',
+          backgroundColor: 'var(--brand-page-bg, #f8fafc)',
+          color: 'var(--brand-dark-grey, #334155)',
+          fontFamily: 'system-ui, sans-serif'
+        }}
+      >
+        <div 
+          style={{
+            width: '36px',
+            height: '36px',
+            border: '3px solid rgba(11, 83, 160, 0.15)',
+            borderTopColor: 'var(--brand-blue, #0b53a0)',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+            marginBottom: '1rem'
+          }}
+        />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <p style={{ fontSize: '0.875rem', fontWeight: 500, margin: 0 }}>Verifying permissions...</p>
+      </div>
+    );
+  }
+
+  const isAuthorized = allowedRoles.includes(activeRole);
 
   if (!isAuthorized) {
-    // Redirect unauthorized navigation to appropriate dashboard or role selection
-    if (storedRole === 'STUDENT') return <Navigate to="/student/dashboard" replace />;
-    if (storedRole === 'FACULTY') return <Navigate to="/faculty/dashboard" replace />;
-    if (storedRole === 'HOD') return <Navigate to="/hod/dashboard" replace />;
+    if (activeRole === 'STUDENT') return <Navigate to="/student/dashboard" replace />;
+    if (activeRole === 'FACULTY') return <Navigate to="/faculty/dashboard" replace />;
+    if (activeRole === 'HOD') return <Navigate to="/hod/dashboard" replace />;
+    if (activeRole === 'ADMIN') return <Navigate to="/admin/dashboard" replace />;
     return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
 };
 
-export const setSessionRole = (role: UserRole) => {
-  localStorage.setItem('unisphere_user_role', role);
-};
+// Deprecated: Role determination is handled strictly via Supabase Auth UUID -> public.profiles.id
+export const setSessionRole = (_newRole: UserRole) => {};
+export const getSessionRole = (): UserRole => 'STUDENT';
 
-export const getSessionRole = (): UserRole => {
-  return (localStorage.getItem('unisphere_user_role') as UserRole) || 'STUDENT';
-};

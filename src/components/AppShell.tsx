@@ -33,6 +33,8 @@ import { AuthLogo } from './AuthLogo';
 import { mockStudentProfile } from '../data/students';
 import { getUnreadNotificationsCount } from '../services/notificationService';
 
+import { useAuth } from '../app/context/AuthContext';
+
 interface AppShellProps {
   children: React.ReactNode;
 }
@@ -40,6 +42,7 @@ interface AppShellProps {
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { signOut, profile, user } = useAuth();
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -64,8 +67,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     };
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (confirm("Are you sure you want to sign out?")) {
+      await signOut();
       navigate('/login/student');
     }
   };
@@ -359,10 +363,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 aria-label="Open profile settings"
               >
                 <div className="profile-avatar">
-                  {mockStudentProfile.name.split(' ').map(n => n[0]).join('')}
+                  {((profile?.full_name || user?.email || 'Student').split(' ').map((n: string) => n[0]).join('')).substring(0, 2)}
                 </div>
                 <span style={{ fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  {mockStudentProfile.name}
+                  {profile?.full_name || user?.email?.split('@')[0] || 'Student'}
                   <ChevronDown size={14} />
                 </span>
               </button>
@@ -370,12 +374,19 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               {isProfileOpen && (
                 <div className="profile-dropdown">
                   <div className="dropdown-header">
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{mockStudentProfile.name}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--brand-dark-grey)' }}>{mockStudentProfile.usn}</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{profile?.full_name || user?.email || 'Student'}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--brand-dark-grey)' }}>
+                      Student · {profile?.department?.name || 'Department not assigned'}
+                    </span>
+                    {profile?.usn_or_employee_id && (
+                      <span style={{ fontSize: '0.7rem', color: 'var(--brand-dark-grey)', marginTop: '0.1rem' }}>
+                        ID: {profile.usn_or_employee_id}
+                      </span>
+                    )}
                   </div>
                   <button 
                     className="dropdown-item"
-                    onClick={() => { setIsProfileOpen(false); alert(`Registered USN: ${mockStudentProfile.usn}\nDepartment: ${mockStudentProfile.department}`); }}
+                    onClick={() => { setIsProfileOpen(false); navigate('/student/profile'); }}
                   >
                     <UserIcon size={16} />
                     My Profile

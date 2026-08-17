@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { AuthLogo } from '../../components/AuthLogo';
 
+import { useAuth } from '../../app/context/AuthContext';
+
 interface HODAppShellProps {
   children: React.ReactNode;
 }
@@ -27,6 +29,10 @@ interface HODAppShellProps {
 export const HODAppShell: React.FC<HODAppShellProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { signOut, profile, user } = useAuth();
+  const hodName = profile?.full_name || user?.email?.split('@')[0] || 'Head of Department';
+  const deptDisplayName = profile?.department?.name || 'Department not assigned';
+  const hodEmail = profile?.email || user?.email || 'N/A';
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -47,9 +53,9 @@ export const HODAppShell: React.FC<HODAppShellProps> = ({ children }) => {
     };
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (confirm("Are you sure you want to sign out from the HOD Portal?")) {
-      localStorage.removeItem('unisphere_user_role');
+      await signOut();
       navigate('/login/faculty');
     }
   };
@@ -142,7 +148,7 @@ export const HODAppShell: React.FC<HODAppShellProps> = ({ children }) => {
       >
         {/* Logo Container */}
         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-          <AuthLogo subtext="HOD PORTAL — CSE DS" />
+          <AuthLogo subtext={`HOD PORTAL — ${profile?.department?.code || profile?.department?.name || ''}`} />
         </div>
 
         {/* Navigation Section Group */}
@@ -228,7 +234,7 @@ export const HODAppShell: React.FC<HODAppShellProps> = ({ children }) => {
               <Menu size={22} />
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <span className="badge badge-graded" style={{ fontSize: '0.75rem' }}>DATA SCIENCE</span>
+              <span className="badge badge-graded" style={{ fontSize: '0.75rem' }}>{profile?.department?.code || profile?.department?.name || 'DEPARTMENT'}</span>
               <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--brand-black)', margin: 0, fontFamily: 'var(--font-display)' }}>
                 Department Head Portal
               </h2>
@@ -309,14 +315,14 @@ export const HODAppShell: React.FC<HODAppShellProps> = ({ children }) => {
                     fontSize: '0.85rem'
                   }}
                 >
-                  SR
+                  {(hodName.split(' ').map((n: string) => n[0]).join('')).substring(0, 2)}
                 </div>
                 <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--brand-black)', lineHeight: 1.2 }}>
-                    Dr. Sneha Reddy
+                    {hodName}
                   </span>
                   <span style={{ fontSize: '0.725rem', color: 'var(--brand-dark-grey)' }}>
-                    HOD · Data Science
+                    HOD · {deptDisplayName}
                   </span>
                 </div>
                 <ChevronDown size={14} style={{ color: 'var(--brand-dark-grey)' }} />
@@ -339,8 +345,8 @@ export const HODAppShell: React.FC<HODAppShellProps> = ({ children }) => {
                   }}
                 >
                   <div style={{ padding: '0.5rem', borderBottom: '1px solid rgba(156, 163, 175, 0.2)', marginBottom: '0.35rem' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--brand-black)' }}>Dr. Sneha Reddy</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--brand-dark-grey)' }}>sneha.reddy@aiet.edu</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--brand-black)' }}>{hodName}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--brand-dark-grey)' }}>{hodEmail}</div>
                   </div>
 
                   <button

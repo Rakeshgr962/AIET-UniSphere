@@ -12,17 +12,17 @@ export const getDepartmentResults = async (): Promise<CourseResultSummary[]> => 
 export const getStudentResultSummary = async (studentId: string): Promise<StudentResultSummary | null> => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const res = mockStudentResults.find(s => s.studentId === studentId || s.usn.toLowerCase() === studentId.toLowerCase());
-      resolve(res || mockStudentResults[0]);
+      const res = mockStudentResults.find(s => s.studentId === studentId || s.usn.toLowerCase() === studentId.toLowerCase()) || null;
+      resolve(res);
     }, 120);
   });
 };
 
 export const getSemesterPerformanceSummary = async () => {
   return [
-    { semester: 3, averagePercent: 78 },
-    { semester: 4, averagePercent: 81 },
-    { semester: 5, averagePercent: 84 },
-    { semester: 6, averagePercent: 79 }
+    { semester: 3, averagePercent: 0 },
+    { semester: 4, averagePercent: 0 },
+    { semester: 5, averagePercent: 0 },
+    { semester: 6, averagePercent: 0 }
   ];
 };

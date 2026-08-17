@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { AuthLogo } from '../../components/AuthLogo';
 
+import { useAuth } from '../../app/context/AuthContext';
+
 interface AdminAppShellProps {
   children: React.ReactNode;
 }
@@ -21,12 +23,17 @@ interface AdminAppShellProps {
 export const AdminAppShell: React.FC<AdminAppShellProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { profile, signOut } = useAuth();
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(2);
   
   const profileRef = useRef<HTMLDivElement>(null);
+
+  const displayName = profile?.full_name || 'System Administrator';
+  const displayEmail = profile?.email || 'admin@aiet.edu';
+  const initials = displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'SA';
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -41,9 +48,9 @@ export const AdminAppShell: React.FC<AdminAppShellProps> = ({ children }) => {
     };
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (confirm("Are you sure you want to sign out from the Admin Portal?")) {
-      localStorage.removeItem('unisphere_user_role');
+      await signOut();
       navigate('/login/admin');
     }
   };
@@ -308,11 +315,11 @@ export const AdminAppShell: React.FC<AdminAppShellProps> = ({ children }) => {
                     fontSize: '0.85rem'
                   }}
                 >
-                  SA
+                  {initials}
                 </div>
                 <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--brand-black)', lineHeight: 1.2 }}>
-                    System Administrator
+                    {displayName}
                   </span>
                   <span style={{ fontSize: '0.725rem', color: 'var(--brand-dark-grey)' }}>
                     Admin · Institution Control
@@ -338,8 +345,8 @@ export const AdminAppShell: React.FC<AdminAppShellProps> = ({ children }) => {
                   }}
                 >
                   <div style={{ padding: '0.5rem', borderBottom: '1px solid rgba(156, 163, 175, 0.2)', marginBottom: '0.35rem' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--brand-black)' }}>System Administrator</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--brand-dark-grey)' }}>admin001@example.test</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--brand-black)' }}>{displayName}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--brand-dark-grey)' }}>{displayEmail}</div>
                   </div>
 
                   <button

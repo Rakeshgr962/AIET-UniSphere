@@ -140,8 +140,8 @@ export const HODCourseDetail: React.FC = () => {
                     <td style={{ padding: '0.75rem' }} className="font-mono text-blue font-bold">{s.usn}</td>
                     <td style={{ padding: '0.75rem', fontWeight: 600, color: 'var(--brand-black)' }}>{s.name}</td>
                     <td style={{ padding: '0.75rem' }} className="font-mono">
-                      <span style={{ fontWeight: 700, color: s.attendancePercent < 75 ? 'var(--color-error)' : 'var(--brand-black)' }}>
-                        {s.attendancePercent}%
+                      <span style={{ fontWeight: 700, color: s.attendancePercent && s.attendancePercent < 75 ? 'var(--color-error)' : 'var(--brand-black)' }}>
+                        {s.attendancePercent != null ? `${s.attendancePercent}%` : 'Not provided'}
                       </span>
                     </td>
                     <td style={{ padding: '0.75rem' }}>

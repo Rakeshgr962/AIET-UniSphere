@@ -5,8 +5,11 @@ import { FacultyAppShell } from '../components/FacultyAppShell';
 import { getAllStudents } from '../../services/studentService';
 import type { ExtendedStudent } from '../../data/students';
 
+import { useAuth } from '../../app/context/AuthContext';
+
 export const FacultyStudentList: React.FC = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [students, setStudents] = useState<ExtendedStudent[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
@@ -20,13 +23,15 @@ export const FacultyStudentList: React.FC = () => {
     });
   }, []);
 
+  const deptName = profile?.department?.name || 'Department not assigned';
+
   const filteredStudents = students.filter(std => {
     const matchesSearch = std.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           std.usn.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'All' || std.academicStatus === statusFilter;
     const matchesAttendance = attendanceFilter === 'All' || 
-      (attendanceFilter === '<75' && std.attendancePercent < 75) ||
-      (attendanceFilter === '>=75' && std.attendancePercent >= 75);
+      (attendanceFilter === '<75' && (std.attendancePercent ?? 0) < 75) ||
+      (attendanceFilter === '>=75' && (std.attendancePercent ?? 0) >= 75);
 
     return matchesSearch && matchesStatus && matchesAttendance;
   });
@@ -35,11 +40,19 @@ export const FacultyStudentList: React.FC = () => {
     <FacultyAppShell>
       {/* Page Title Header */}
       <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', textAlign: 'left' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+          <span className="badge badge-active font-mono" style={{ backgroundColor: 'var(--brand-blue)', color: '#FFF' }}>
+            {profile?.department?.code || 'DEPT'}
+          </span>
+          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--brand-dark-grey)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            {deptName}
+          </span>
+        </div>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--brand-black)' }}>
           Student Academic Roster
         </h1>
         <p style={{ fontSize: '0.9rem', color: 'var(--brand-dark-grey)', fontWeight: 500 }}>
-          Monitor academic progress, attendance records, assignment completion, and performance status across enrolled courses.
+          Enrolled students in {deptName}. Automatically synced with department profile assignments.
         </p>
       </div>
 
@@ -95,6 +108,14 @@ export const FacultyStudentList: React.FC = () => {
         <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--brand-dark-grey)', fontWeight: 500 }}>
           Loading student roster...
         </div>
+      ) : filteredStudents.length === 0 ? (
+        <div className="dashboard-panel" style={{ textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--brand-dark-grey)' }}>
+          <Users size={44} style={{ margin: '0 auto 0.75rem', opacity: 0.4, color: 'var(--brand-black)' }} />
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--brand-black)' }}>No Enrolled Students Registered</h3>
+          <p style={{ fontSize: '0.85rem', marginTop: '0.25rem', maxWidth: '420px', marginInline: 'auto' }}>
+            No student records match the active criteria. Enrolled student profiles will populate here upon Supabase database sync.
+          </p>
+        </div>
       ) : (
         <div className="dashboard-panel" style={{ padding: 0, overflow: 'hidden' }}>
           <div className="table-responsive">
@@ -121,16 +142,18 @@ export const FacultyStudentList: React.FC = () => {
                     <td style={{ fontSize: '0.85rem', fontFamily: 'monospace' }}>{std.usn}</td>
                     <td style={{ fontSize: '0.85rem' }}>
                       {std.department}<br />
-                      <span style={{ fontSize: '0.75rem', color: 'var(--brand-dark-grey)' }}>Sem {std.semester}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--brand-dark-grey)' }}>{std.semester ? `Sem ${std.semester}` : 'Sem N/A'}</span>
                     </td>
                     <td>
-                      <span style={{ fontWeight: 700, color: std.attendancePercent < 75 ? 'var(--color-error)' : 'var(--brand-blue)' }}>
-                        {std.attendancePercent}%
+                      <span style={{ fontWeight: 700, color: std.attendancePercent && std.attendancePercent < 75 ? 'var(--color-error)' : 'var(--brand-blue)' }}>
+                        {std.attendancePercent != null ? `${std.attendancePercent}%` : 'Not provided'}
                       </span>
                     </td>
-                    <td style={{ fontSize: '0.9rem', fontWeight: 700, fontFamily: 'monospace' }}>{std.cgpa}</td>
+                    <td style={{ fontSize: '0.9rem', fontWeight: 700, fontFamily: 'monospace' }}>
+                      {std.cgpa != null ? Number(std.cgpa).toFixed(2) : 'N/A'}
+                    </td>
                     <td style={{ fontSize: '0.85rem' }}>
-                      {std.assignmentsCompleted} / {std.assignmentsTotal}
+                      {std.assignmentsCompleted != null ? `${std.assignmentsCompleted} / ${std.assignmentsTotal || 0}` : 'N/A'}
                     </td>
                     <td>
                       <span className={`badge ${

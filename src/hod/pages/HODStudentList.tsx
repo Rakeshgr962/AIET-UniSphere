@@ -5,8 +5,11 @@ import { HODAppShell } from '../components/HODAppShell';
 import { getAllStudents } from '../../services/studentService';
 import type { ExtendedStudent } from '../../data/students';
 
+import { useAuth } from '../../app/context/AuthContext';
+
 export const HODStudentList: React.FC = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [students, setStudents] = useState<ExtendedStudent[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [semesterFilter, setSemesterFilter] = useState('All');
@@ -28,19 +31,21 @@ export const HODStudentList: React.FC = () => {
     loadStudents();
   }, []);
 
+  const deptName = profile?.department?.name || 'Department Enrolled';
+
   const filteredStudents = students.filter((s) => {
     const matchesSearch = 
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.usn.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesSemester = semesterFilter === 'All' || s.semester.toString() === semesterFilter;
+    const matchesSemester = semesterFilter === 'All' || (s.semester != null ? s.semester.toString() : '') === semesterFilter;
     const matchesStatus = statusFilter === 'All' || s.academicStatus === statusFilter;
 
     return matchesSearch && matchesSemester && matchesStatus;
   });
 
-  const atRiskCount = students.filter(s => s.academicStatus === 'At Risk' || s.attendancePercent < 75).length;
+  const atRiskCount = students.filter(s => s.academicStatus === 'At Risk' || (s.attendancePercent ?? 100) < 75).length;
 
   return (
     <HODAppShell>
@@ -52,7 +57,7 @@ export const HODStudentList: React.FC = () => {
             Student Directory
           </h1>
           <p style={{ fontSize: '0.9rem', color: 'var(--brand-dark-grey)', marginTop: '0.2rem' }}>
-            Data Science Department Enrolled Students & Academic Status
+            {deptName} Enrolled Students &amp; Academic Status
           </p>
         </div>
 
@@ -161,18 +166,18 @@ export const HODStudentList: React.FC = () => {
                     </td>
 
                     <td style={{ padding: '1rem 1.25rem' }}>
-                      <span style={{ fontWeight: 600 }}>Semester {s.semester}</span>
+                      <span style={{ fontWeight: 600 }}>{s.semester ? `Semester ${s.semester}` : 'Semester N/A'}</span>
                     </td>
 
                     <td style={{ padding: '1rem 1.25rem' }}>
-                      <span className="font-mono" style={{ fontWeight: 700, color: s.attendancePercent < 75 ? 'var(--color-error)' : 'var(--brand-black)' }}>
-                        {s.attendancePercent}%
+                      <span className="font-mono" style={{ fontWeight: 700, color: s.attendancePercent && s.attendancePercent < 75 ? 'var(--color-error)' : 'var(--brand-black)' }}>
+                        {s.attendancePercent != null ? `${s.attendancePercent}%` : 'Not provided'}
                       </span>
                     </td>
 
                     <td style={{ padding: '1rem 1.25rem' }}>
                       <span className="font-mono" style={{ fontWeight: 700, color: 'var(--brand-black)' }}>
-                        {s.cgpa.toFixed(2)}
+                        {s.cgpa != null ? Number(s.cgpa).toFixed(2) : 'N/A'}
                       </span>
                     </td>
 

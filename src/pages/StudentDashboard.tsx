@@ -18,9 +18,11 @@ import { ProgressBar } from '../components/ProgressBar';
 import { AIInsightCard } from '../components/AIInsightCard';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
+import { useAuth } from '../app/context/AuthContext';
 
 export const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { profile: authProfile, user, refreshProfile } = useAuth();
 
   // Unified loading & error states
   const [isLoading, setIsLoading] = useState(true);
@@ -57,6 +59,7 @@ export const StudentDashboard: React.FC = () => {
   };
 
   useEffect(() => {
+    refreshProfile();
     fetchDashboardData();
   }, []);
 
@@ -88,28 +91,48 @@ export const StudentDashboard: React.FC = () => {
     return 'Good Evening';
   };
 
+  const studentName = authProfile?.full_name || user?.email?.split('@')[0] || profile?.name || 'Student';
+  const deptDisplayName = authProfile?.department?.name || 'Department not assigned';
+  const isProfileIncomplete = !profile?.phone || profile?.semester == null;
+
   return (
     <AppShell>
       {/* Dashboard Greeting Header */}
-      <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', textAlign: 'left' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: 'var(--font-display)' }}>
-          {getGreeting()}, {profile.name} 👋
+      <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', textAlign: 'left' }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: 'var(--font-display)', margin: 0 }}>
+          {getGreeting()}, {studentName} 👋
         </h1>
-        <p style={{ fontSize: '0.9rem', color: 'var(--brand-dark-grey)', fontWeight: 500 }}>
-          {profile.department} · Semester {profile.semester} · Academic Year {profile.academicYear}
+        <p style={{ fontSize: '0.9rem', color: 'var(--brand-dark-grey)', fontWeight: 500, marginTop: '0.1rem' }}>
+          {deptDisplayName} {profile?.semester ? `· Semester ${profile.semester}` : ''}
         </p>
       </div>
+
+      {isProfileIncomplete && (
+        <div style={{ padding: '0.85rem 1.25rem', backgroundColor: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 'var(--border-radius)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div>
+            <div style={{ fontWeight: 700, color: '#92400E', fontSize: '0.9rem' }}>Your student profile is incomplete</div>
+            <div style={{ fontSize: '0.8rem', color: '#B45309' }}>Complete your profile details to update your semester, guardian info, and contact details.</div>
+          </div>
+          <button 
+            className="btn btn-secondary font-sans" 
+            style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem', borderColor: '#D97706', color: '#92400E', backgroundColor: '#FFF' }}
+            onClick={() => navigate('/student/profile')}
+          >
+            Complete Profile
+          </button>
+        </div>
+      )}
 
       {/* Academic Overview stats */}
       <div className="stat-cards-grid">
         <StatCard 
           title="Attendance" 
-          value={`${attendance?.overallPercentage}%`} 
+          value={attendance?.overallPercentage != null ? `${attendance.overallPercentage}%` : "No data"} 
           icon={<CalendarCheck size={20} />} 
         />
         <StatCard 
           title="CGPA" 
-          value={profile.cgpa.toFixed(2)} 
+          value={profile?.cgpa != null ? Number(profile.cgpa).toFixed(2) : "Not provided"} 
           icon={<GraduationCap size={20} />} 
         />
         <StatCard 

@@ -1,4 +1,4 @@
-import { mockAssignments } from '../data/assignments';
+import { supabase } from '../lib/supabase';
 import type { Assignment } from '../data/assignments';
 export type { Assignment };
 import { addNotification } from './notificationService';
@@ -27,213 +27,319 @@ export interface CreateAssignmentPayload {
   rubric?: string[];
 }
 
-// Shared reactive session state
-let sessionAssignments: Assignment[] = [...mockAssignments];
+export const getAssignments = async (): Promise<Assignment[]> => {
+  try {
+    const { data: { user } } = await (supabase as any).auth.getUser();
+    if (!user) return [];
 
-let sessionSubmissions: FacultyAssignmentSubmission[] = [
-  {
-    id: "sub-1",
-    assignmentId: "assign-dbms-04",
-    studentId: "std-1",
-    studentName: "Jane Doe",
-    usn: "1AB20CS002",
-    submittedAt: "2026-08-16T14:30:00",
-    fileName: "1AB20CS002_DBMS_Optimization.pdf",
-    status: "Submitted"
-  },
-  {
-    id: "sub-2",
-    assignmentId: "assign-dbms-04",
-    studentId: "std-2",
-    studentName: "Rakesh G R",
-    usn: "4AI21DS001",
-    submittedAt: "2026-08-16T16:15:00",
-    fileName: "4AI21DS001_DBMS_Query_Tuning.pdf",
-    status: "Submitted"
-  },
-  {
-    id: "sub-3",
-    assignmentId: "assign-dbms-04",
-    studentId: "std-7",
-    studentName: "Pooja Hegde",
-    usn: "4AI21DS045",
-    submittedAt: "2026-08-17T08:45:00",
-    fileName: "4AI21DS045_Indexing_Benchmark.pdf",
-    status: "Submitted"
-  },
-  {
-    id: "sub-4",
-    assignmentId: "assign-da-02",
-    studentId: "std-1",
-    studentName: "Jane Doe",
-    usn: "1AB20CS002",
-    submittedAt: "2026-08-11T21:40:00",
-    fileName: "1AB20CS002_Algorithms_DP.pdf",
-    status: "Submitted"
-  },
-  {
-    id: "sub-5",
-    assignmentId: "assign-se-01",
-    studentId: "std-1",
-    studentName: "Jane Doe",
-    usn: "1AB20CS002",
-    submittedAt: "2026-08-04T15:30:00",
-    fileName: "1AB20CS002_SE_Hostel_UML.pdf",
-    status: "Graded",
-    marks: 13,
-    feedback: "Great object relations in the Class diagram. The Sequence diagram was missing the database entity lifecycle step."
-  }
-];
+    // Query profile for student department
+    const { data: profile } = await (supabase as any)
+      .from('profiles')
+      .select('department_id')
+      .eq('id', user.id)
+      .single();
 
-export const getAssignments = (): Promise<Assignment[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([...sessionAssignments]);
-    }, 150);
-  });
-};
+    if (!profile?.department_id) return [];
 
-export const getFacultyAssignments = (): Promise<Assignment[]> => {
-  return getAssignments();
-};
+    // Fetch assignments for department
+    const { data: assignmentsData, error } = await (supabase as any)
+      .from('assignments')
+      .select('*')
+      .eq('department_id', profile.department_id)
+      .order('created_at', { ascending: false });
 
-export const getAssignmentById = (id: string): Promise<Assignment | undefined> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const assignment = sessionAssignments.find(a => a.id === id);
-      resolve(assignment ? { ...assignment } : undefined);
-    }, 150);
-  });
-};
+    if (error || !assignmentsData) {
+      console.error('Error fetching student assignments:', error);
+      return [];
+    }
 
-export const submitAssignment = (id: string, fileName: string): Promise<Assignment> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const index = sessionAssignments.findIndex(a => a.id === id);
-      if (index !== -1) {
-        const updated: Assignment = {
-          ...sessionAssignments[index],
-          status: 'Submitted',
-          submittedFile: {
-            name: fileName,
-            submittedAt: new Date().toISOString()
-          }
-        };
-        sessionAssignments[index] = updated;
+    // Fetch student's submissions
+    const { data: submissionsData } = await (supabase as any)
+      .from('assignment_submissions')
+      .select('*')
+      .eq('student_id', user.id);
 
-        // Also add or update submission entry for faculty view
-        const existingSubIdx = sessionSubmissions.findIndex(s => s.assignmentId === id && s.studentId === 'std-1');
-        if (existingSubIdx !== -1) {
-          sessionSubmissions[existingSubIdx] = {
-            ...sessionSubmissions[existingSubIdx],
-            submittedAt: new Date().toISOString(),
-            fileName: fileName,
-            status: 'Submitted'
-          };
-        } else {
-          sessionSubmissions.push({
-            id: `sub-${Date.now()}`,
-            assignmentId: id,
-            studentId: "std-1",
-            studentName: "Jane Doe",
-            usn: "1AB20CS002",
-            submittedAt: new Date().toISOString(),
-            fileName: fileName,
-            status: "Submitted"
-          });
-        }
+    const submissionsMap = new Map((submissionsData || []).map((s: any) => [s.assignment_id, s]));
 
-        resolve(updated);
-      } else {
-        reject(new Error("Assignment not found"));
+    return assignmentsData.map((a: any) => {
+      const sub: any = submissionsMap.get(a.id);
+      let status: Assignment['status'] = 'Pending';
+      if (sub) {
+        status = sub.status === 'Graded' ? 'Graded' : 'Submitted';
+      } else if (new Date(a.deadline) < new Date()) {
+        status = 'Overdue';
       }
-    }, 300);
-  });
-};
 
-export const createAssignment = (payload: CreateAssignmentPayload): Promise<Assignment> => {
-  return new Promise((resolve) => {
-    setTimeout(async () => {
-      const newId = `assign-${payload.courseId}-${Date.now().toString().slice(-4)}`;
-      const newAssignment: Assignment = {
-        id: newId,
-        title: payload.title,
-        courseId: payload.courseId,
-        courseName: payload.courseName,
-        deadline: payload.deadline,
-        marks: payload.marks,
-        status: 'Pending',
-        instructions: payload.instructions,
-        resources: payload.resources || [],
-        rubric: payload.rubric || [
-          "Technical Accuracy & Completeness (10 Marks)",
-          "Code/Document Formatting & Structure (5 Marks)",
-          "Timely Submission (5 Marks)"
-        ]
+      return {
+        id: a.id,
+        title: a.title,
+        courseId: a.course_id,
+        courseName: a.course_name,
+        deadline: a.deadline,
+        marks: Number(a.marks),
+        status,
+        instructions: a.instructions || a.description || '',
+        resources: Array.isArray(a.resources) ? a.resources : [],
+        rubric: Array.isArray(a.rubric) ? a.rubric : [],
+        submittedFile: sub ? { name: sub.file_name, submittedAt: sub.submitted_at } : undefined,
+        grade: sub?.status === 'Graded' ? {
+          score: Number(sub.marks || 0),
+          feedback: sub.feedback || '',
+          gradedBy: 'Faculty Evaluator'
+        } : undefined
       };
+    });
+  } catch (err) {
+    console.error('Failed to query assignments:', err);
+    return [];
+  }
+};
 
-      sessionAssignments = [newAssignment, ...sessionAssignments];
+export const getFacultyAssignments = async (): Promise<Assignment[]> => {
+  try {
+    const { data: { user } } = await (supabase as any).auth.getUser();
+    if (!user) return [];
 
-      // Send automated notification to students
-      await addNotification({
-        title: `New Assignment Posted: ${payload.title}`,
-        message: `${payload.courseName} assignment posted by faculty. Due date: ${payload.deadline.slice(0, 10)}.`,
-        category: 'Assignments',
-        type: 'urgent',
-        link: `/student/assignments/${newId}`
+    const { data: profile } = await (supabase as any)
+      .from('profiles')
+      .select('department_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile?.department_id) return [];
+
+    const { data: assignmentsData, error } = await (supabase as any)
+      .from('assignments')
+      .select('*')
+      .or(`department_id.eq.${profile.department_id},created_by.eq.${user.id}`)
+      .order('created_at', { ascending: false });
+
+    if (error || !assignmentsData) return [];
+
+    return assignmentsData.map((a: any) => ({
+      id: a.id,
+      title: a.title,
+      courseId: a.course_id,
+      courseName: a.course_name,
+      deadline: a.deadline,
+      marks: Number(a.marks),
+      status: 'Pending',
+      instructions: a.instructions || '',
+      resources: Array.isArray(a.resources) ? a.resources : [],
+      rubric: Array.isArray(a.rubric) ? a.rubric : []
+    }));
+  } catch (err) {
+    console.error('Failed to query faculty assignments:', err);
+    return [];
+  }
+};
+
+export const getAssignmentById = async (id: string): Promise<Assignment | undefined> => {
+  try {
+    const { data: a, error } = await (supabase as any)
+      .from('assignments')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !a) return undefined;
+
+    const { data: { user } } = await (supabase as any).auth.getUser();
+    let sub: any = null;
+    if (user) {
+      const { data } = await (supabase as any)
+        .from('assignment_submissions')
+        .select('*')
+        .eq('assignment_id', id)
+        .eq('student_id', user.id)
+        .maybeSingle();
+      sub = data;
+    }
+
+    let status: Assignment['status'] = 'Pending';
+    if (sub) {
+      status = sub.status === 'Graded' ? 'Graded' : 'Submitted';
+    } else if (new Date(a.deadline) < new Date()) {
+      status = 'Overdue';
+    }
+
+    return {
+      id: a.id,
+      title: a.title,
+      courseId: a.course_id,
+      courseName: a.course_name,
+      deadline: a.deadline,
+      marks: Number(a.marks),
+      status,
+      instructions: a.instructions || '',
+      resources: Array.isArray(a.resources) ? a.resources : [],
+      rubric: Array.isArray(a.rubric) ? a.rubric : [],
+      submittedFile: sub ? { name: sub.file_name, submittedAt: sub.submitted_at } : undefined,
+      grade: sub?.status === 'Graded' ? {
+        score: Number(sub.marks || 0),
+        feedback: sub.feedback || '',
+        gradedBy: 'Faculty Evaluator'
+      } : undefined
+    };
+  } catch (err) {
+    console.error('Failed to query assignment by id:', err);
+    return undefined;
+  }
+};
+
+export const submitAssignment = async (id: string, fileName: string): Promise<Assignment> => {
+  const { data: { user } } = await (supabase as any).auth.getUser();
+  if (!user) throw new Error("Authenticated session required.");
+
+  const { data: existing } = await (supabase as any)
+    .from('assignment_submissions')
+    .select('id')
+    .eq('assignment_id', id)
+    .eq('student_id', user.id)
+    .maybeSingle();
+
+  if (existing) {
+    await (supabase as any)
+      .from('assignment_submissions')
+      .update({
+        file_name: fileName,
+        submitted_at: new Date().toISOString(),
+        status: 'Submitted'
+      })
+      .eq('id', existing.id);
+  } else {
+    await (supabase as any)
+      .from('assignment_submissions')
+      .insert({
+        assignment_id: id,
+        student_id: user.id,
+        file_name: fileName,
+        submitted_at: new Date().toISOString(),
+        status: 'Submitted'
       });
+  }
 
-      resolve(newAssignment);
-    }, 250);
-  });
+  const updated = await getAssignmentById(id);
+  if (!updated) throw new Error("Assignment submission failed.");
+  return updated;
 };
 
-export const getSubmissionsForAssignment = (assignmentId: string): Promise<FacultyAssignmentSubmission[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const subs = sessionSubmissions.filter(s => s.assignmentId === assignmentId);
-      resolve([...subs]);
-    }, 150);
-  });
+export const createAssignment = async (payload: CreateAssignmentPayload): Promise<Assignment> => {
+  const { data: { user } } = await (supabase as any).auth.getUser();
+  if (!user) throw new Error("Authenticated session required.");
+
+  // Get current user's profile to resolve department_id
+  const { data: profile, error: profErr } = await (supabase as any)
+    .from('profiles')
+    .select('department_id')
+    .eq('id', user.id)
+    .single();
+
+  if (profErr || !profile?.department_id) {
+    throw new Error("No active department assigned to your profile. Cannot create assignment.");
+  }
+
+  const { data, error } = await (supabase as any)
+    .from('assignments')
+    .insert({
+      title: payload.title,
+      course_id: payload.courseId,
+      course_name: payload.courseName,
+      instructions: payload.instructions,
+      deadline: payload.deadline,
+      marks: payload.marks,
+      department_id: profile.department_id,
+      created_by: user.id,
+      status: 'Active',
+      resources: payload.resources || [],
+      rubric: payload.rubric || [
+        "Technical Accuracy & Completeness (10 Marks)",
+        "Code/Document Formatting & Structure (5 Marks)",
+        "Timely Submission (5 Marks)"
+      ]
+    })
+    .select()
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message || "Failed to create assignment.");
+  }
+
+  return {
+    id: data.id,
+    title: data.title,
+    courseId: data.course_id,
+    courseName: data.course_name,
+    deadline: data.deadline,
+    marks: Number(data.marks),
+    status: 'Pending',
+    instructions: data.instructions || '',
+    resources: Array.isArray(data.resources) ? data.resources : [],
+    rubric: Array.isArray(data.rubric) ? data.rubric : []
+  };
 };
 
-export const gradeSubmission = (
+export const getSubmissionsForAssignment = async (assignmentId: string): Promise<FacultyAssignmentSubmission[]> => {
+  try {
+    const { data, error } = await (supabase as any)
+      .from('assignment_submissions')
+      .select('*, profiles!student_id(full_name, usn_or_employee_id)')
+      .eq('assignment_id', assignmentId);
+
+    if (error || !data) return [];
+
+    return data.map((s: any) => ({
+      id: s.id,
+      assignmentId: s.assignment_id,
+      studentId: s.student_id,
+      studentName: s.profiles?.full_name || 'Student',
+      usn: s.profiles?.usn_or_employee_id || 'N/A',
+      submittedAt: s.submitted_at,
+      fileName: s.file_name,
+      status: s.status,
+      marks: s.marks ? Number(s.marks) : undefined,
+      feedback: s.feedback || undefined
+    }));
+  } catch (err) {
+    console.error('Error fetching submissions:', err);
+    return [];
+  }
+};
+
+export const gradeSubmission = async (
   assignmentId: string,
   submissionId: string,
   marks: number,
   feedback: string,
-  gradedBy: string = "Dr. Sneha Reddy"
+  gradedBy: string = "Faculty Evaluator"
 ): Promise<FacultyAssignmentSubmission> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const subIdx = sessionSubmissions.findIndex(s => s.id === submissionId || (s.assignmentId === assignmentId && s.id === submissionId));
-      if (subIdx !== -1) {
-        const updatedSub: FacultyAssignmentSubmission = {
-          ...sessionSubmissions[subIdx],
-          status: 'Graded',
-          marks,
-          feedback
-        };
-        sessionSubmissions[subIdx] = updatedSub;
+  const { data: { user } } = await (supabase as any).auth.getUser();
 
-        // Sync with student assignment view if this belongs to Jane Doe (std-1)
-        const assignIdx = sessionAssignments.findIndex(a => a.id === assignmentId);
-        if (assignIdx !== -1) {
-          sessionAssignments[assignIdx] = {
-            ...sessionAssignments[assignIdx],
-            status: 'Graded',
-            grade: {
-              score: marks,
-              feedback,
-              gradedBy
-            }
-          };
-        }
+  const { data, error } = await (supabase as any)
+    .from('assignment_submissions')
+    .update({
+      status: 'Graded',
+      marks,
+      feedback,
+      graded_by: user?.id || null,
+      graded_at: new Date().toISOString()
+    })
+    .eq('id', submissionId)
+    .select('*, profiles!student_id(full_name, usn_or_employee_id)')
+    .single();
 
-        resolve(updatedSub);
-      } else {
-        reject(new Error("Submission not found"));
-      }
-    }, 250);
-  });
+  if (error || !data) throw new Error(error?.message || "Failed to grade submission.");
+
+  return {
+    id: data.id,
+    assignmentId: data.assignment_id,
+    studentId: data.student_id,
+    studentName: data.profiles?.full_name || 'Student',
+    usn: data.profiles?.usn_or_employee_id || 'N/A',
+    submittedAt: data.submitted_at,
+    fileName: data.file_name,
+    status: data.status,
+    marks: Number(data.marks),
+    feedback: data.feedback || undefined
+  };
 };

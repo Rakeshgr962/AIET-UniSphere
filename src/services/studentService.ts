@@ -1,7 +1,7 @@
 import type { ServiceTypeItem, ServiceRequestItem, CreateServiceRequestPayload } from '../data/studentServices';
 import { mockServiceTypes, mockServiceRequests } from '../data/studentServices';
-import { mockStudentProfile } from '../data/students';
-import type { StudentProfile } from '../data/students';
+import { mockStudentProfile, mockStudentsRoster } from '../data/students';
+import type { StudentProfile, ExtendedStudent } from '../data/students';
 
 let localRequests: ServiceRequestItem[] = [...mockServiceRequests];
 
@@ -9,6 +9,31 @@ export const getStudentProfile = async (): Promise<StudentProfile> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(mockStudentProfile);
+    }, 100);
+  });
+};
+
+export const getAllStudents = async (): Promise<ExtendedStudent[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([...mockStudentsRoster]);
+    }, 100);
+  });
+};
+
+export const getStudentById = async (id: string): Promise<ExtendedStudent | null> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const student = mockStudentsRoster.find(s => s.id === id || s.usn.toLowerCase() === id.toLowerCase()) || null;
+      resolve(student);
+    }, 100);
+  });
+};
+
+export const getStudentsByCourse = async (courseId: string): Promise<ExtendedStudent[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([...mockStudentsRoster]);
     }, 100);
   });
 };

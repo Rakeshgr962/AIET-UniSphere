@@ -7,9 +7,11 @@ export const getAssessments = (): Promise<Assessment[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(sessionAssessments);
-    }, 500);
+    }, 300);
   });
 };
+
+export const getDepartmentAssessments = getAssessments;
 
 export const getAssessmentById = (id: string): Promise<Assessment | undefined> => {
   return new Promise((resolve) => {

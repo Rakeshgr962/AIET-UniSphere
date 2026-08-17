@@ -5,6 +5,7 @@ import { FormField } from '../components/FormField';
 import { PasswordField } from '../components/PasswordField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { FormMessage } from '../components/FormMessage';
+import { setSessionRole } from '../app/guards/RoleGuard';
 
 export const FacultyLogin: React.FC = () => {
   const navigate = useNavigate();
@@ -64,22 +65,27 @@ export const FacultyLogin: React.FC = () => {
     setTimeout(() => {
       setIsLoading(false);
       
-      // Hardcoded validation success example
-      if (identifier.toLowerCase() === 'demofaculty' && password === 'Password123') {
+      // Hardcoded validation success example or any input for easy demo
+      if ((identifier.toLowerCase() === 'demofaculty' && password === 'Password123') || identifier.trim().length >= 3) {
+        setSessionRole(subRole === 'hod' ? 'HOD' : 'FACULTY');
         setStatus({ 
           type: 'success', 
-          message: `Successfully signed in as ${subRole === 'hod' ? 'HOD' : 'Faculty'}! Redirecting...` 
+          message: `Successfully signed in as ${subRole === 'hod' ? 'Head of Department (HOD)' : 'Faculty'}! Redirecting to Dashboard...` 
         });
         setTimeout(() => {
-          alert(`Signed in successfully as ${subRole === 'hod' ? 'HOD' : 'Faculty'} (Demo mode).`);
-        }, 1000);
+          if (subRole === 'hod') {
+            navigate('/hod/dashboard');
+          } else {
+            navigate('/faculty/dashboard');
+          }
+        }, 800);
       } else {
         setStatus({ 
           type: 'error', 
           message: "Invalid Employee ID/Email or password. Please try again." 
         });
       }
-    }, 1500);
+    }, 1000);
   };
 
   return (

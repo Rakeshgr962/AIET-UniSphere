@@ -35,3 +35,14 @@ export const deleteNotification = async (id: string): Promise<NotificationItem[]
   localNotifications = localNotifications.filter(n => n.id !== id);
   return getNotifications();
 };
+
+export const addNotification = async (notif: Omit<NotificationItem, 'id' | 'timestamp' | 'isRead'>): Promise<NotificationItem> => {
+  const newNotif: NotificationItem = {
+    ...notif,
+    id: `notif-${Date.now()}`,
+    timestamp: "Just now",
+    isRead: false
+  };
+  localNotifications = [newNotif, ...localNotifications];
+  return newNotif;
+};

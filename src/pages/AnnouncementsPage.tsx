@@ -1,13 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AppShell } from '../components/AppShell';
 import { Megaphone, Calendar } from 'lucide-react';
+import { getDepartmentAnnouncements } from '../services/announcementService';
+import type { Announcement } from '../data/announcements';
 
 export const AnnouncementsPage: React.FC = () => {
-  const announcements = [
-    { id: '1', title: 'AIET Hackathon 2026 Registration Open', date: '14 Aug 2026', sender: 'Innovation & Incubation Cell', content: 'Registrations are open for the annual AIET Hackathon. Cash prizes up to ₹1.5 Lakhs. Form teams of 4 members.' },
-    { id: '2', title: 'Library Hours Extended for Mid-Sem Exams', date: '10 Aug 2026', sender: 'Central Library', content: 'The Central Digital Library will remain open until 10:00 PM starting next Monday for examination preparation.' },
-    { id: '3', title: 'Submitting Project Proposals for Semester 6', date: '05 Aug 2026', sender: 'Department Project Coordinator', content: 'All 6th Semester students are requested to upload project abstracts and team rosters in the Project Portal by August 25.' }
-  ];
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        const data = await getDepartmentAnnouncements();
+        setAnnouncements(data);
+      } catch (err) {
+        console.error("Error fetching announcements:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnnouncements();
+  }, []);
 
   return (
     <AppShell>
@@ -26,21 +39,27 @@ export const AnnouncementsPage: React.FC = () => {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-        {announcements.map((anc) => (
-          <div key={anc.id} className="card-box">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-              <Megaphone size={18} className="text-orange-icon" />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{anc.title}</h3>
+        {loading ? (
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--brand-dark-grey)' }}>Loading Announcements...</div>
+        ) : announcements.length === 0 ? (
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--brand-dark-grey)' }}>No announcements available at this time.</div>
+        ) : (
+          announcements.map((anc) => (
+            <div key={anc.id} className="card-box">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <Megaphone size={18} className="text-orange-icon" />
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{anc.title}</h3>
+              </div>
+              <p style={{ fontSize: '0.95rem', color: 'var(--brand-black)', lineHeight: '1.5' }}>
+                {anc.content}
+              </p>
+              <div style={{ marginTop: '1rem', display: 'flex', gap: '1.5rem', fontSize: '0.8rem', color: 'var(--brand-dark-grey)' }}>
+                <span>From: <strong>{anc.author || anc.category || 'Department Head'}</strong></span>
+                <span className="font-mono"><Calendar size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />{anc.date || anc.publishedAt || 'Recent'}</span>
+              </div>
             </div>
-            <p style={{ fontSize: '0.95rem', color: 'var(--brand-black)', lineHeight: '1.5' }}>
-              {anc.content}
-            </p>
-            <div style={{ marginTop: '1rem', display: 'flex', gap: '1.5rem', fontSize: '0.8rem', color: 'var(--brand-dark-grey)' }}>
-              <span>From: <strong>{anc.sender}</strong></span>
-              <span className="font-mono"><Calendar size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />{anc.date}</span>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </AppShell>
   );

@@ -31,7 +31,8 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ children, allowedRoles }) 
 
   // Retrieve current active user role from localStorage or default to current route context
   const storedRole = (localStorage.getItem('unisphere_user_role') as UserRole) || 
-    (location.pathname.startsWith('/hod') ? 'HOD' : 
+    (location.pathname.startsWith('/admin') ? 'ADMIN' : 
+     location.pathname.startsWith('/hod') ? 'HOD' : 
      location.pathname.startsWith('/faculty') ? 'FACULTY' : 'STUDENT');
 
   const isAuthorized = allowedRoles.includes(storedRole);

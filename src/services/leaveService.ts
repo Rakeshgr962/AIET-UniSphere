@@ -306,6 +306,18 @@ export const submitLeaveRequest = async (payload: {
     type: 'Request'
   });
 
+  // Notify the student that their leave was submitted
+  await (supabase as any).from('notifications').insert({
+    user_id: user.id,
+    title: 'Leave Request Submitted',
+    short_message: `Your ${payload.leaveType} request (${data.reference_id}) from ${payload.startDate} to ${payload.endDate} has been submitted and is pending HOD review.`,
+    full_message: `Your leave request has been submitted successfully.\n\nLeave Type: ${payload.leaveType}\nDates: ${payload.startDate} to ${payload.endDate}\nReason: ${payload.reason}\nStatus: PENDING\n\nYour department HOD will review this request.`,
+    source: 'Student Portal',
+    category: 'Leave',
+    type: 'Request',
+    related_link: '/student/leave-requests'
+  });
+
   const sDate = new Date(data.start_date);
   const eDate = new Date(data.end_date);
   const diffTime = Math.abs(eDate.getTime() - sDate.getTime());

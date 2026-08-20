@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { AppShell } from '../components/AppShell';
-import { Plus, CheckCircle2, XCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { Plus, CheckCircle2, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { getStudentLeaveRequests, submitLeaveRequest } from '../services/leaveService';
 import type { LeaveRequest } from '../data/leaveRequests';
 
 export const LeaveRequestsPage: React.FC = () => {
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
   
   // Form state
-  const [leaveType, setLeaveType] = useState('Duty Leave');
+  const [leaveType, setLeaveType] = useState('');
   const [reason, setReason] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -19,9 +21,15 @@ export const LeaveRequestsPage: React.FC = () => {
 
   const loadLeaves = async () => {
     setLoading(true);
-    const data = await getStudentLeaveRequests();
-    setLeaves(data);
-    setLoading(false);
+    setLoadError(null);
+    try {
+      const data = await getStudentLeaveRequests();
+      setLeaves(data);
+    } catch (err: any) {
+      setLoadError(err.message || 'Unable to load leave requests. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -29,7 +37,7 @@ export const LeaveRequestsPage: React.FC = () => {
   }, []);
 
   const handleOpenModal = () => {
-    setLeaveType('Duty Leave');
+    setLeaveType('');
     setReason('');
     setStartDate('');
     setEndDate('');
@@ -39,13 +47,21 @@ export const LeaveRequestsPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reason.trim() || !startDate || !endDate) {
-      setErrorMsg('Please complete all required fields.');
+    
+    if (!leaveType.trim()) {
+      setErrorMsg('Leave type / reason is required.');
       return;
     }
-
+    if (!startDate || !endDate) {
+      setErrorMsg('Both start date and end date are required.');
+      return;
+    }
+    if (!reason.trim()) {
+      setErrorMsg('Reason / purpose cannot be empty.');
+      return;
+    }
     if (new Date(endDate) < new Date(startDate)) {
-      setErrorMsg('End date cannot be earlier than start date.');
+      setErrorMsg('Start date cannot be after end date.');
       return;
     }
 
@@ -53,12 +69,14 @@ export const LeaveRequestsPage: React.FC = () => {
     setErrorMsg('');
     try {
       await submitLeaveRequest({
-        leaveType,
+        leaveType: leaveType.trim(),
         reason: reason.trim(),
         startDate,
         endDate
       });
       setIsModalOpen(false);
+      setSuccessMsg('Leave request submitted successfully.');
+      setTimeout(() => setSuccessMsg(''), 5000);
       await loadLeaves();
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to submit leave request.');
@@ -87,15 +105,28 @@ export const LeaveRequestsPage: React.FC = () => {
         </button>
       </div>
 
+      {successMsg && (
+        <div style={{ padding: '0.85rem 1.25rem', backgroundColor: '#D1FAE5', border: '1px solid #6EE7B7', color: '#065F46', borderRadius: 'var(--border-radius)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>
+          <CheckCircle2 size={18} />
+          <span>{successMsg}</span>
+        </div>
+      )}
+
       <div className="card-box" style={{ padding: '0', overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--brand-dark-grey)' }}>
             Loading leave requests...
           </div>
+        ) : loadError ? (
+          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--brand-dark-grey)' }}>
+            <AlertCircle size={36} style={{ margin: '0 auto 0.75rem', color: '#EF4444' }} />
+            <p style={{ fontWeight: 600, fontSize: '1rem', color: '#991B1B' }}>{loadError}</p>
+            <button className="btn btn-secondary" style={{ marginTop: '0.75rem' }} onClick={loadLeaves}>Try Again</button>
+          </div>
         ) : leaves.length === 0 ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--brand-dark-grey)' }}>
             <Clock size={36} style={{ margin: '0 auto 0.75rem', color: '#94A3B8' }} />
-            <p style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--brand-black)' }}>No leave requests submitted</p>
+            <p style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--brand-black)' }}>No leave requests found.</p>
             <p style={{ fontSize: '0.85rem' }}>Click "+ Apply for Leave" above to request an academic or medical leave.</p>
           </div>
         ) : (
@@ -175,18 +206,15 @@ export const LeaveRequestsPage: React.FC = () => {
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: 700, color: 'var(--brand-black)', marginBottom: '0.35rem' }}>
-                  Leave Type *
+                  Leave Type / Reason *
                 </label>
-                <select
+                <input
+                  type="text"
                   value={leaveType}
                   onChange={(e) => setLeaveType(e.target.value)}
+                  placeholder="Enter leave type (e.g. Medical Leave, Duty Leave, Tech Fest, Internship...)"
                   style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: 'var(--border-radius)', border: '1px solid rgba(156, 163, 175, 0.4)', fontSize: '0.9rem' }}
-                >
-                  <option value="Duty Leave">Duty Leave</option>
-                  <option value="Medical Leave">Medical Leave</option>
-                  <option value="Casual Leave">Casual Leave</option>
-                  <option value="Academic Leave">Academic Leave</option>
-                </select>
+                />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>

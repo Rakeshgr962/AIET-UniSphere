@@ -1,14 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  GitBranch, 
-  FolderGit2, 
-  Play, 
-  Share2, 
-  ArrowLeft,
-  Sidebar,
-  Sliders,
-  CheckCircle2
+  GitBranch, FolderGit2, Play, Share2, ArrowLeft,
+  Sidebar, Sliders, CheckCircle2, AlertCircle, Save
 } from 'lucide-react';
 import { AppShell } from '../components/AppShell';
 import { LoadingState } from '../components/LoadingState';
@@ -17,110 +11,189 @@ import { WorkspaceFileExplorer } from '../components/WorkspaceFileExplorer';
 import type { FileTreeNode } from '../components/WorkspaceFileExplorer';
 import { WorkspaceEditor } from '../components/WorkspaceEditor';
 import { WorkspaceTerminal } from '../components/WorkspaceTerminal';
-import { ProjectContextPanel } from '../components/ProjectContextPanel';
-import type { ProjectItem } from '../data/projects';
-import type { ProjectTaskItem } from '../data/projectTasks';
-import type { ProjectMilestoneItem } from '../data/projectMilestones';
-import { getProjectById } from '../services/projectService';
-import { 
-  getProjectWorkspaceFiles, 
-  getProjectTasks, 
-  getProjectMilestones, 
-  toggleTaskStatus 
-} from '../services/workspaceService';
+import { useAuth } from '../app/context/AuthContext';
+import {
+  ensureDefaultProject, getProjectFiles, createProjectFile,
+  updateFileContent, renameProjectFile, deleteProjectFile, buildFileTree,
+  type UserProject, type ProjectFileNode
+} from '../services/projectPersistenceService';
+
+interface OpenTab extends FileTreeNode {
+  isDirty?: boolean;
+  savedContent?: string;
+}
 
 export const ProjectWorkspace: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user, profile: authProfile } = useAuth();
 
-  const [project, setProject] = useState<ProjectItem | null>(null);
-  const [files, setFiles] = useState<FileTreeNode[]>([]);
-  const [tasks, setTasks] = useState<ProjectTaskItem[]>([]);
-  const [milestones, setMilestones] = useState<ProjectMilestoneItem[]>([]);
+  const [project, setProject] = useState<UserProject | null>(null);
+  const [flatFiles, setFlatFiles] = useState<ProjectFileNode[]>([]);
+  const [treeFiles, setTreeFiles] = useState<FileTreeNode[]>([]);
+  const [openTabs, setOpenTabs] = useState<OpenTab[]>([]);
+  const [activeTab, setActiveTab] = useState<OpenTab | null>(null);
 
-  // Workspace active states
-  const [openTabs, setOpenTabs] = useState<FileTreeNode[]>([]);
-  const [activeTab, setActiveTab] = useState<FileTreeNode | null>(null);
-
-  // Panel collapsible toggles
   const [isExplorerOpen, setIsExplorerOpen] = useState(true);
-  const [isContextOpen, setIsContextOpen] = useState(true);
   const [isTerminalOpen] = useState(true);
-  const [mobileTab, setMobileTab] = useState<'editor' | 'explorer' | 'terminal' | 'context'>('editor');
+  const [mobileTab, setMobileTab] = useState<'editor' | 'explorer' | 'terminal'>('editor');
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
-  const fetchWorkspace = async () => {
+  // Prompt modal state
+  const [promptMode, setPromptMode] = useState<'create-file' | 'create-folder' | 'rename' | null>(null);
+  const [promptValue, setPromptValue] = useState('');
+  const [promptTarget, setPromptTarget] = useState<{ parentId: string | null; parentPath: string; file?: FileTreeNode } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<FileTreeNode | null>(null);
+
+  const loadWorkspace = useCallback(async () => {
+    if (!user) return;
     setIsLoading(true);
     setError(null);
     try {
-      const projId = id || 'proj-1';
-      const proj = await getProjectById(projId);
-      if (!proj) {
-        setError("Project not found.");
-        return;
-      }
+      const proj = await ensureDefaultProject(user.id);
       setProject(proj);
 
-      const [filesData, taskData, msData] = await Promise.all([
-        getProjectWorkspaceFiles(projId) as Promise<FileTreeNode[]>,
-        getProjectTasks(projId),
-        getProjectMilestones(projId)
-      ]);
-
-      setFiles(filesData);
-      setTasks(taskData);
-      setMilestones(msData);
-
-      // Default initial open tab (e.g. ProjectCard.tsx or README.md)
-      const defaultFile: FileTreeNode = {
-        name: 'ProjectCard.tsx',
-        type: 'file',
-        language: 'typescript',
-        content: `import React from 'react';\nimport { ProjectItem } from '../data/projects';\n\ninterface ProjectCardProps {\n  project: ProjectItem;\n}\n\nexport const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {\n  return (\n    <div className="project-card">\n      <h3>{project.name}</h3>\n      <p>{project.description}</p>\n      <div className="progress-bar">\n        <div style={{ width: \`\${project.progress}%\` }}></div>\n      </div>\n    </div>\n  );\n};`
-      };
-      setOpenTabs([defaultFile]);
-      setActiveTab(defaultFile);
-    } catch (err) {
-      setError("Unable to load project workspace.");
+      const files = await getProjectFiles(proj.id);
+      setFlatFiles(files);
+      setTreeFiles(buildFileTree(files) as FileTreeNode[]);
+    } catch (err: any) {
+      setError(err.message || 'Unable to load project workspace.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    fetchWorkspace();
-  }, [id]);
+    loadWorkspace();
+  }, [loadWorkspace]);
+
+  const refreshFiles = async () => {
+    if (!project) return;
+    const files = await getProjectFiles(project.id);
+    setFlatFiles(files);
+    setTreeFiles(buildFileTree(files) as FileTreeNode[]);
+  };
 
   const handleSelectFile = (file: FileTreeNode) => {
     if (file.type === 'folder') return;
-    if (!openTabs.some(t => t.name === file.name)) {
-      setOpenTabs([...openTabs, file]);
+    const existing = openTabs.find(t => t.id === file.id);
+    if (existing) {
+      setActiveTab(existing);
+    } else {
+      const tab: OpenTab = { ...file, isDirty: false, savedContent: file.content || '' };
+      setOpenTabs(prev => [...prev, tab]);
+      setActiveTab(tab);
     }
-    setActiveTab(file);
     setMobileTab('editor');
   };
 
-  const handleCloseTab = (file: FileTreeNode, e: React.MouseEvent) => {
+  const handleCloseTab = (file: OpenTab, e: React.MouseEvent) => {
     e.stopPropagation();
-    const remaining = openTabs.filter(t => t.name !== file.name);
+    const remaining = openTabs.filter(t => t.id !== file.id);
     setOpenTabs(remaining);
-    if (activeTab?.name === file.name) {
+    if (activeTab?.id === file.id) {
       setActiveTab(remaining.length > 0 ? remaining[remaining.length - 1] : null);
     }
   };
 
-  const handleEditorContentChange = (newContent: string) => {
+  const handleContentChange = (newContent: string) => {
     if (!activeTab) return;
-    const updatedTab = { ...activeTab, content: newContent };
+    const updatedTab: OpenTab = {
+      ...activeTab,
+      content: newContent,
+      isDirty: newContent !== (activeTab.savedContent ?? '')
+    };
     setActiveTab(updatedTab);
-    setOpenTabs(openTabs.map(t => t.name === activeTab.name ? updatedTab : t));
+    setOpenTabs(prev => prev.map(t => t.id === activeTab.id ? updatedTab : t));
   };
 
-  const handleToggleTask = async (taskId: string) => {
-    const updated = await toggleTaskStatus(taskId);
-    setTasks(updated.filter(t => t.projectId === (id || 'proj-1') || t.projectId === 'proj-1'));
+  const handleSave = async () => {
+    if (!activeTab || !activeTab.isDirty) return;
+    try {
+      await updateFileContent(activeTab.id, activeTab.content || '');
+      const savedTab: OpenTab = { ...activeTab, isDirty: false, savedContent: activeTab.content || '' };
+      setActiveTab(savedTab);
+      setOpenTabs(prev => prev.map(t => t.id === activeTab.id ? savedTab : t));
+      setSaveStatus('File saved successfully.');
+      setTimeout(() => setSaveStatus(null), 2000);
+    } catch (err: any) {
+      setSaveStatus('Failed to save: ' + (err.message || 'Unknown error'));
+      setTimeout(() => setSaveStatus(null), 4000);
+    }
+  };
+
+  // File CRUD handlers
+  const handleCreateFile = (parentId: string | null, parentPath: string, type: 'file' | 'folder') => {
+    setPromptMode(type === 'file' ? 'create-file' : 'create-folder');
+    setPromptTarget({ parentId, parentPath });
+    setPromptValue('');
+  };
+
+  const handleRenameFile = (file: FileTreeNode) => {
+    setPromptMode('rename');
+    setPromptTarget({ parentId: null, parentPath: '', file });
+    setPromptValue(file.name);
+  };
+
+  const handleDeleteFile = (file: FileTreeNode) => {
+    setConfirmDelete(file);
+  };
+
+  const executePrompt = async () => {
+    if (!promptValue.trim() || !project) return;
+    try {
+      if (promptMode === 'create-file' || promptMode === 'create-folder') {
+        const type = promptMode === 'create-file' ? 'file' : 'folder';
+        await createProjectFile(project.id, promptTarget?.parentId || null, promptValue.trim(), type, promptTarget?.parentPath || '');
+      } else if (promptMode === 'rename' && promptTarget?.file) {
+        await renameProjectFile(promptTarget.file.id, promptValue.trim());
+        // Update open tabs if the renamed file is open
+        setOpenTabs(prev => prev.map(t => t.id === promptTarget.file!.id ? { ...t, name: promptValue.trim() } : t));
+        if (activeTab?.id === promptTarget.file.id) {
+          setActiveTab(prev => prev ? { ...prev, name: promptValue.trim() } : null);
+        }
+      }
+      await refreshFiles();
+    } catch (err: any) {
+      console.error('File operation error:', err);
+    }
+    setPromptMode(null);
+    setPromptTarget(null);
+  };
+
+  const executeDelete = async () => {
+    if (!confirmDelete || !project) return;
+    try {
+      await deleteProjectFile(confirmDelete.id, project.id);
+      // Close tab if deleted file was open
+      setOpenTabs(prev => prev.filter(t => t.id !== confirmDelete.id));
+      if (activeTab?.id === confirmDelete.id) {
+        const remaining = openTabs.filter(t => t.id !== confirmDelete.id);
+        setActiveTab(remaining.length > 0 ? remaining[remaining.length - 1] : null);
+      }
+      await refreshFiles();
+    } catch (err: any) {
+      console.error('Delete error:', err);
+    }
+    setConfirmDelete(null);
+  };
+
+  const handleRunProject = () => {
+    if (!project) return;
+    // Find an index.html or main file and try to preview
+    const htmlFile = flatFiles.find(f => f.name === 'index.html');
+    if (htmlFile && htmlFile.content) {
+      const blob = new Blob([htmlFile.content], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setSaveStatus('Preview opened in new tab.');
+    } else {
+      setSaveStatus('No index.html found for preview. Create an index.html file to enable Run/Preview.');
+    }
+    setTimeout(() => setSaveStatus(null), 4000);
   };
 
   if (isLoading) {
@@ -134,23 +207,18 @@ export const ProjectWorkspace: React.FC = () => {
   if (error || !project) {
     return (
       <AppShell>
-        <ErrorState message={error || "Workspace error"} onRetry={fetchWorkspace} />
+        <ErrorState message={error || 'Workspace error'} onRetry={loadWorkspace} />
       </AppShell>
     );
   }
 
   return (
     <AppShell>
-      {/* Workspace Container */}
       <div className="ide-workspace-outer">
         {/* Top IDE Toolbar */}
         <div className="ide-top-toolbar">
           <div className="toolbar-left">
-            <button 
-              className="ide-btn-icon" 
-              onClick={() => navigate(`/student/projects/${project.id}`)}
-              title="Back to Project Details"
-            >
+            <button className="ide-btn-icon" onClick={() => navigate(-1)} title="Back">
               <ArrowLeft size={16} />
             </button>
             <div className="toolbar-project-title">
@@ -158,7 +226,7 @@ export const ProjectWorkspace: React.FC = () => {
                 {project.name}
               </span>
               <span className="badge badge-active" style={{ fontSize: '0.65rem' }}>
-                {project.projectType}
+                Workspace
               </span>
             </div>
           </div>
@@ -168,43 +236,24 @@ export const ProjectWorkspace: React.FC = () => {
               <GitBranch size={14} className="text-orange-icon" />
               <span>main</span>
             </div>
-            <span className="toolbar-divider">|</span>
-            <div className="toolbar-status-item">
-              <CheckCircle2 size={13} style={{ color: 'var(--color-success)' }} />
-              <span>Workspace Synced</span>
-            </div>
+            {saveStatus && (
+              <>
+                <span className="toolbar-divider">|</span>
+                <div className="toolbar-status-item">
+                  <CheckCircle2 size={13} style={{ color: 'var(--color-success)' }} />
+                  <span style={{ fontSize: '0.75rem' }}>{saveStatus}</span>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="toolbar-right">
-            <button 
-              className="ide-btn ide-btn-secondary"
-              onClick={() => navigate('/student/github')}
-            >
-              <FolderGit2 size={15} />
-              Git / GitHub
+            <button className="ide-btn ide-btn-secondary" onClick={() => navigate('/student/github')}>
+              <FolderGit2 size={15} /> Git / GitHub
             </button>
-
-            <button 
-              className="ide-btn ide-btn-primary"
-              onClick={() => alert("Simulating local server dev build: Live reload running at http://localhost:5173")}
-            >
-              <Play size={15} />
-              Run Project
+            <button className="ide-btn ide-btn-primary" onClick={handleRunProject}>
+              <Play size={15} /> Run / Preview
             </button>
-
-            <button 
-              className="ide-btn ide-btn-secondary"
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                alert("Workspace share link copied to clipboard!");
-              }}
-              title="Share Workspace Link"
-            >
-              <Share2 size={15} />
-              Share
-            </button>
-
-            {/* Panel toggle shortcuts */}
             <div className="panel-toggles-group">
               <button 
                 className={`ide-btn-icon ${isExplorerOpen ? 'active' : ''}`}
@@ -212,13 +261,6 @@ export const ProjectWorkspace: React.FC = () => {
                 title="Toggle Explorer"
               >
                 <Sidebar size={16} />
-              </button>
-              <button 
-                className={`ide-btn-icon ${isContextOpen ? 'active' : ''}`}
-                onClick={() => setIsContextOpen(!isContextOpen)}
-                title="Toggle Context Panel"
-              >
-                <Sliders size={16} />
               </button>
             </div>
           </div>
@@ -229,58 +271,89 @@ export const ProjectWorkspace: React.FC = () => {
           <button className={mobileTab === 'explorer' ? 'active' : ''} onClick={() => setMobileTab('explorer')}>Explorer</button>
           <button className={mobileTab === 'editor' ? 'active' : ''} onClick={() => setMobileTab('editor')}>Editor</button>
           <button className={mobileTab === 'terminal' ? 'active' : ''} onClick={() => setMobileTab('terminal')}>Terminal</button>
-          <button className={mobileTab === 'context' ? 'active' : ''} onClick={() => setMobileTab('context')}>Requirements</button>
         </div>
 
         {/* Main IDE Layout Body */}
         <div className="ide-layout-grid">
-          {/* Left File Explorer Panel */}
           {isExplorerOpen && (
             <div className={`ide-panel-left ${mobileTab === 'explorer' ? 'mobile-visible' : ''}`}>
               <WorkspaceFileExplorer
-                files={files}
-                activeFile={activeTab?.name || ''}
+                files={treeFiles}
+                activeFile={activeTab?.id || ''}
                 onSelectFile={handleSelectFile}
+                onCreateFile={handleCreateFile}
+                onRenameFile={handleRenameFile}
+                onDeleteFile={handleDeleteFile}
+                onRefresh={refreshFiles}
               />
             </div>
           )}
 
-          {/* Center Editor + Bottom Terminal Panel */}
           <div className={`ide-panel-center ${mobileTab === 'editor' || mobileTab === 'terminal' ? 'mobile-visible' : ''}`}>
-            {/* Editor Area */}
             <div className="ide-editor-wrapper">
               <WorkspaceEditor
                 openTabs={openTabs}
                 activeTab={activeTab}
                 onSelectTab={setActiveTab}
                 onCloseTab={handleCloseTab}
-                onContentChange={handleEditorContentChange}
+                onContentChange={handleContentChange}
+                onSave={handleSave}
               />
             </div>
 
-            {/* Bottom Terminal */}
             {isTerminalOpen && (
               <div className="ide-terminal-wrapper">
-                <WorkspaceTerminal 
-                  onRunProject={() => alert("Running 'npm run dev' on local port 5173...")} 
-                />
+                <WorkspaceTerminal projectName={project.name} />
               </div>
             )}
           </div>
-
-          {/* Right Context Panel */}
-          {isContextOpen && (
-            <div className={`ide-panel-right ${mobileTab === 'context' ? 'mobile-visible' : ''}`}>
-              <ProjectContextPanel
-                project={project}
-                tasks={tasks}
-                milestones={milestones}
-                onToggleTask={handleToggleTask}
-              />
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Create / Rename Prompt Modal */}
+      {promptMode && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div className="dashboard-panel" style={{ width: '100%', maxWidth: '400px', padding: '1.5rem' }}>
+            <h3 className="font-display" style={{ fontSize: '1.1rem', fontWeight: 700, marginTop: 0, marginBottom: '1rem' }}>
+              {promptMode === 'create-file' ? 'Create New File' : promptMode === 'create-folder' ? 'Create New Folder' : 'Rename'}
+            </h3>
+            <input
+              type="text"
+              className="form-input font-sans"
+              value={promptValue}
+              onChange={(e) => setPromptValue(e.target.value)}
+              placeholder={promptMode === 'rename' ? 'New name...' : promptMode === 'create-folder' ? 'Folder name...' : 'File name (e.g. App.tsx)...'}
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') executePrompt(); }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
+              <button className="btn btn-secondary" onClick={() => setPromptMode(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={executePrompt}>
+                {promptMode === 'rename' ? 'Rename' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm Modal */}
+      {confirmDelete && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div className="dashboard-panel" style={{ width: '100%', maxWidth: '400px', padding: '1.5rem' }}>
+            <h3 className="font-display" style={{ fontSize: '1.1rem', fontWeight: 700, marginTop: 0, color: '#DC2626' }}>
+              Delete {confirmDelete.type === 'folder' ? 'Folder' : 'File'}
+            </h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--brand-dark-grey)' }}>
+              Are you sure you want to delete <strong>{confirmDelete.name}</strong>?
+              {confirmDelete.type === 'folder' && ' This will also delete all files inside it.'}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
+              <button className="btn btn-secondary" onClick={() => setConfirmDelete(null)}>Cancel</button>
+              <button className="btn" style={{ backgroundColor: '#DC2626', color: '#FFF', border: '1px solid #DC2626' }} onClick={executeDelete}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 };

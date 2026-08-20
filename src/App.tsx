@@ -126,6 +126,7 @@ const App: React.FC = () => {
         <Route path="/student/projects/my" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><MyProjectsList /></RoleGuard>} />
         <Route path="/student/projects/:id" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><ProjectDetail /></RoleGuard>} />
         <Route path="/student/projects/:id/workspace" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><ProjectWorkspace /></RoleGuard>} />
+        <Route path="/student/project-workspace" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><ProjectWorkspace /></RoleGuard>} />
         <Route path="/student/github" element={<RoleGuard allowedRoles={['STUDENT', 'ADMIN']}><GitGithubPage /></RoleGuard>} />
 
         {/* Phase 5 Required Feature Routes */}

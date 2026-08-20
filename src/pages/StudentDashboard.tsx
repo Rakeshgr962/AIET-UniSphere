@@ -93,6 +93,7 @@ export const StudentDashboard: React.FC = () => {
 
   const studentName = authProfile?.full_name || user?.email?.split('@')[0] || profile?.name || 'Student';
   const deptDisplayName = authProfile?.department?.name || 'Department not assigned';
+  const usnDisplay = authProfile?.usn_or_employee_id || '';
   const isProfileIncomplete = !profile?.phone || profile?.semester == null;
 
   return (
@@ -103,7 +104,9 @@ export const StudentDashboard: React.FC = () => {
           {getGreeting()}, {studentName} 👋
         </h1>
         <p style={{ fontSize: '0.9rem', color: 'var(--brand-dark-grey)', fontWeight: 500, marginTop: '0.1rem' }}>
-          {deptDisplayName} {profile?.semester ? `· Semester ${profile.semester}` : ''}
+          {usnDisplay ? <span className="font-mono" style={{ fontWeight: 700 }}>{usnDisplay}</span> : null}
+          {usnDisplay ? ' · ' : ''}{deptDisplayName} {profile?.semester ? `· Semester ${profile.semester}` : ''}
+          {profile?.cgpa != null ? ` · CGPA: ${Number(profile.cgpa).toFixed(2)}` : ''}
         </p>
       </div>
 

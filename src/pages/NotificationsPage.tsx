@@ -62,7 +62,7 @@ export const NotificationsPage: React.FC = () => {
   // Filtering notifications
   const filteredNotifications = notifications.filter(n => {
     if (selectedFilter === 'Unread') return !n.isRead;
-    if (selectedFilter === 'Academic') return n.category === 'Academic';
+    if (selectedFilter === 'Academic') return n.category === 'Academic' || n.category === 'Leave';
     if (selectedFilter === 'Projects') return n.category === 'Projects';
     if (selectedFilter === 'System') return n.category === 'System';
     return true;

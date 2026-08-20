@@ -8,7 +8,7 @@ export interface LeaveRequest {
   requesterEmail?: string;
   departmentId: string;
   departmentName?: string;
-  leaveType: 'Duty Leave' | 'Medical Leave' | 'Casual Leave' | 'Academic Leave';
+  leaveType: string;
   startDate: string;
   endDate: string;
   days: number;

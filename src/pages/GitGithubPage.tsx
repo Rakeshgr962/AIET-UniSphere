@@ -132,7 +132,7 @@ export const GitGithubPage: React.FC = () => {
           <button 
             className="btn btn-primary"
             style={{ width: 'auto' }}
-            onClick={() => navigate('/student/projects/proj-1/workspace')}
+            onClick={() => navigate('/student/project-workspace')}
           >
             <Terminal size={15} />
             Open IDE Workspace

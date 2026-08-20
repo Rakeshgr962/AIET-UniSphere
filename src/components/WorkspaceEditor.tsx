@@ -1,22 +1,37 @@
-import React from 'react';
-import { X, FileCode } from 'lucide-react';
+import React, { useEffect, useCallback } from 'react';
+import { X, FileCode, Circle } from 'lucide-react';
 import type { FileTreeNode } from './WorkspaceFileExplorer';
 
+interface OpenTab extends FileTreeNode {
+  isDirty?: boolean;
+  savedContent?: string;
+}
+
 interface WorkspaceEditorProps {
-  openTabs: FileTreeNode[];
-  activeTab: FileTreeNode | null;
-  onSelectTab: (file: FileTreeNode) => void;
-  onCloseTab: (file: FileTreeNode, e: React.MouseEvent) => void;
+  openTabs: OpenTab[];
+  activeTab: OpenTab | null;
+  onSelectTab: (file: OpenTab) => void;
+  onCloseTab: (file: OpenTab, e: React.MouseEvent) => void;
   onContentChange: (newContent: string) => void;
+  onSave?: () => void;
 }
 
 export const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({
-  openTabs,
-  activeTab,
-  onSelectTab,
-  onCloseTab,
-  onContentChange
+  openTabs, activeTab, onSelectTab, onCloseTab, onContentChange, onSave
 }) => {
+  // Ctrl+S handler
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      onSave?.();
+    }
+  }, [onSave]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   if (!activeTab) {
     return (
       <div className="workspace-editor-empty">
@@ -35,15 +50,18 @@ export const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({
       {/* Tabs Header */}
       <div className="editor-tabs-bar">
         {openTabs.map((tab) => {
-          const isActive = activeTab.name === tab.name;
+          const isActive = activeTab.id === tab.id;
           return (
             <div
-              key={tab.name}
+              key={tab.id}
               className={`editor-tab ${isActive ? 'active' : ''}`}
               onClick={() => onSelectTab(tab)}
             >
               <FileCode size={13} className="tab-icon" />
               <span>{tab.name}</span>
+              {tab.isDirty && (
+                <Circle size={8} style={{ fill: 'var(--brand-orange)', color: 'var(--brand-orange)', marginLeft: '2px' }} />
+              )}
               <button 
                 className="tab-close-btn" 
                 onClick={(e) => onCloseTab(tab, e)}
@@ -72,6 +90,22 @@ export const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({
             spellCheck={false}
           />
         </div>
+      </div>
+
+      {/* Status Bar */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '0.2rem 0.75rem', fontSize: '0.7rem', color: 'var(--brand-dark-grey)',
+        borderTop: '1px solid rgba(156,163,175,0.2)', backgroundColor: 'var(--brand-light-grey)'
+      }}>
+        <span>{activeTab.language || 'text'} · {activeTab.path || activeTab.name}</span>
+        <span>
+          {activeTab.isDirty ? (
+            <span style={{ color: 'var(--brand-orange)', fontWeight: 600 }}>● Unsaved — Ctrl+S to save</span>
+          ) : (
+            <span style={{ color: 'var(--color-success)' }}>✓ Saved</span>
+          )}
+        </span>
       </div>
     </div>
   );
